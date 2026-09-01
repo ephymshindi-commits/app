@@ -1,0 +1,31 @@
+.sign-out-button {
+  width: calc(100% - 16px);
+  margin: 12px 8px 0;
+  padding: 10px 11px;
+  border: 1px solid #f0d9dc;
+  border-radius: 8px;
+  background: #fff8f8;
+  color: #b3404d;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font: 700 13px inherit;
+  cursor: pointer;
+}
+
+.sign-out-button span {
+  width: 18px;
+  font-size: 17px;
+  text-align: center;
+}
+
+.sign-out-button:hover,
+.sign-out-button:focus-visible {
+  background: #fff0f1;
+  border-color: #e9b5bc;
+}
+
+.sign-out-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px #e9b5bc66;
+}
