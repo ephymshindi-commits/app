@@ -17,9 +17,9 @@
 }
 
 .auth-brand .college-logo {
-  width: 54px;
-  height: 54px;
-  flex-basis: 54px;
+  width: 88px;
+  height: 88px;
+  flex-basis: 88px;
 }
 
 .brand > span,
@@ -31,7 +31,7 @@
 }
 
 .auth-brand > span {
-  font-size: 15px;
+  font-size: 21px;
 }
 
 .brand b,
@@ -40,6 +40,25 @@
   color: var(--college-gold);
   font-size: 11px;
   letter-spacing: 0.15em;
+}
+
+.auth-brand b {
+  font-size: 14px;
+}
+
+.auth-aside {
+  align-items: center;
+  overflow: hidden;
+}
+
+.school-photo {
+  width: min(100%, 760px);
+  height: min(74vh, 680px);
+  object-fit: cover;
+  object-position: center;
+  border: 8px solid #ffffff;
+  border-radius: 22px;
+  box-shadow: 0 24px 60px #102a633d;
 }
 
 .institution {
