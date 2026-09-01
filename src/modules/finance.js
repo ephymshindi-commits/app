@@ -170,6 +170,30 @@ async function openPaymentForm() {
   }
 }
 
+async function openMpesaForm() {
+  if (!requireAdministrator()) return;
+  try {
+    await loadOpenInvoicesIntoPaymentForm();
+    const source = document.querySelector('#payment-invoice');
+    const target = document.querySelector('#mpesa-invoice');
+    target.replaceChildren(...[...source.options].map((entry) => new Option(entry.text, entry.value)));
+    document.querySelector('#mpesa-stk-form').reset();
+    setFormMessage('mpesa-stk-form-message'); openDialog('mpesa-stk-modal');
+  } catch (error) { showToast(friendlyDbError(error, 'Unable to prepare the M-Pesa request.')); }
+}
+
+async function requestMpesaStk(event) {
+  event.preventDefault();
+  const button = document.querySelector('#send-mpesa-stk');
+  setButtonBusy(button, true, 'Sending…', 'Send M-Pesa prompt'); setFormMessage('mpesa-stk-form-message');
+  try {
+    const { data, error } = await state.client.functions.invoke('mpesa-stk', { body: { invoiceId: document.querySelector('#mpesa-invoice').value, amount: Number(document.querySelector('#mpesa-amount').value), phone: document.querySelector('#mpesa-phone').value.trim() } });
+    if (error || data?.error) throw error || new Error(data.error);
+    closeDialog('mpesa-stk-modal'); showToast(data.message || 'M-Pesa prompt sent.');
+  } catch (error) { setFormMessage('mpesa-stk-form-message', error?.message || 'Could not send the M-Pesa prompt.'); }
+  finally { setButtonBusy(button, false, '', 'Send M-Pesa prompt'); }
+}
+
 async function submitPayment(event) {
   event.preventDefault();
   if (!requireAdministrator()) return;
@@ -206,8 +230,10 @@ async function submitPayment(event) {
 export function initFinance() {
   document.querySelector('#add-invoice').addEventListener('click', openInvoiceForm);
   document.querySelector('#record-payment').addEventListener('click', openPaymentForm);
+  document.querySelector('#request-mpesa-stk').addEventListener('click', openMpesaForm);
   document.querySelector('#invoice-form').addEventListener('submit', submitInvoice);
   document.querySelector('#payment-form').addEventListener('submit', submitPayment);
+  document.querySelector('#mpesa-stk-form').addEventListener('submit', requestMpesaStk);
   document.querySelector('#receipts-table').addEventListener('click', (event) => {
     const button = event.target.closest('[data-receipt-download]');
     if (button) downloadReceipt(recentPayments.get(button.dataset.receiptDownload));
