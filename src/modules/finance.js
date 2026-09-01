@@ -5,6 +5,7 @@ import {
 import { createStudentProfileLink } from './student-profile.js';
 
 let openInvoices = new Map();
+let recentPayments = new Map();
 
 function option(label, value = '') {
   return new Option(label, value);
@@ -14,6 +15,33 @@ function createReference(prefix) {
   const timestamp = new Date().toISOString().replace(/[-:TZ.]/g, '').slice(0, 12);
   const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
   return `${prefix}-${timestamp}-${suffix}`;
+}
+
+function escapeHtml(value = '') {
+  return String(value).replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]));
+}
+
+function receiptDocument(payment) {
+  const student = Array.isArray(payment.students) ? payment.students[0] : payment.students;
+  const invoice = Array.isArray(payment.invoices) ? payment.invoices[0] : payment.invoices;
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Receipt ${escapeHtml(payment.receipt_number)}</title><style>body{font:15px Arial;color:#172345;max-width:700px;margin:45px auto;padding:0 24px}.head{border-bottom:3px solid #2764e7;padding-bottom:18px}h1{margin:0;font-size:25px}h2{font-size:18px;margin-top:28px}dl{display:grid;grid-template-columns:180px 1fr;gap:12px}dt{font-weight:700;color:#5c6a80}dd{margin:0}.amount{font-size:30px;font-weight:800;color:#2764e7;margin:22px 0}.note{margin-top:36px;padding-top:14px;border-top:1px solid #ddd;color:#5c6a80}@media print{body{margin:0}}</style></head><body><div class="head"><h1>LOVE &amp; TRUTH BIBLE AND SKILLS TRAINING COLLEGE</h1><p>Official payment receipt</p></div><h2>Receipt ${escapeHtml(payment.receipt_number)}</h2><dl><dt>Student</dt><dd>${escapeHtml(`${student?.first_name || ''} ${student?.last_name || ''}`.trim())}</dd><dt>Registration number</dt><dd>${escapeHtml(student?.registration_number || '—')}</dd><dt>Fee charge</dt><dd>${escapeHtml(invoice?.invoice_number || '—')}</dd><dt>Payment method</dt><dd>${escapeHtml(payment.method)}</dd><dt>Transaction reference</dt><dd>${escapeHtml(payment.reference || '—')}</dd><dt>Date received</dt><dd>${escapeHtml(new Date(payment.received_at).toLocaleString())}</dd></dl><p class="amount">Amount paid: ${escapeHtml(formatKes(payment.amount))}</p><p><strong>Account balance after this payment: ${escapeHtml(formatKes(payment.balance || 0))}</strong></p><p class="note">Thank you for your payment. Learning with purpose. Training with excellence.</p></body></html>`;
+}
+
+function downloadReceipt(payment) {
+  const blob = new Blob([receiptDocument(payment)], { type: 'text/html' });
+  const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `${payment.receipt_number}.html`; link.click();
+  window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+}
+
+function showConfirmation(payment) {
+  const student = Array.isArray(payment.students) ? payment.students[0] : payment.students;
+  const message = `LOVE & TRUTH BIBLE AND SKILLS TRAINING COLLEGE: Thank you. We received ${formatKes(payment.amount)} for ${student?.first_name || 'the student'} ${student?.last_name || ''} (${student?.registration_number || '—'}). Balance: ${formatKes(payment.balance || 0)}. Receipt: ${payment.receipt_number}.`;
+  document.querySelector('#payment-confirmation-copy').textContent = message;
+  const email = student?.personal_email;
+  const emailLink = document.querySelector('#payment-confirmation-email');
+  emailLink.hidden = !email; emailLink.href = email ? `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(`Payment confirmation ${payment.receipt_number}`)}&body=${encodeURIComponent(message)}` : '#';
+  document.querySelector('#download-confirmation-receipt').onclick = () => downloadReceipt(payment);
+  openDialog('payment-confirmation-modal');
 }
 
 async function loadStudentsInto(selectId) {
@@ -47,14 +75,18 @@ export async function loadFinance() {
   if (!requireAdministrator()) return;
   setText('finance-message', 'Loading financial records…');
   try {
-    const [summaryResult, invoicesResult] = await Promise.all([
+    const [summaryResult, invoicesResult, paymentsResult] = await Promise.all([
       state.client.from('institution_operational_summary').select('*').single(),
       state.client.from('invoices')
         .select('id, invoice_number, amount, due_on, status, students(id, registration_number, first_name, last_name)')
         .order('created_at', { ascending: false }).limit(50),
+      state.client.from('payments')
+        .select('id, receipt_number, amount, method, reference, received_at, students(id, registration_number, first_name, last_name, personal_email), invoices(invoice_number)')
+        .order('received_at', { ascending: false }).limit(50),
     ]);
     if (summaryResult.error) throw summaryResult.error;
     if (invoicesResult.error) throw invoicesResult.error;
+    if (paymentsResult.error) throw paymentsResult.error;
     const summary = summaryResult.data || {};
     setText('finance-invoiced', formatKes(summary.total_invoiced));
     setText('finance-collected', formatKes(summary.total_collected));
@@ -65,13 +97,20 @@ export async function loadFinance() {
     setText('finance-debtors', `${summary.students_with_balance || 0} student${Number(summary.students_with_balance || 0) === 1 ? '' : 's'} with a balance`);
     clearTable('finance-table');
     const invoices = invoicesResult.data || [];
-    setText('finance-message', invoices.length ? 'Latest 50 invoices. Payment status updates automatically after a payment.' : 'No invoices have been issued yet.');
+    setText('finance-message', invoices.length ? 'Fee charges and receipt records are up to date.' : 'No fee charges have been created yet.');
     invoices.forEach((invoice) => {
       const student = Array.isArray(invoice.students) ? invoice.students[0] : invoice.students;
       appendTableRow('finance-table', [
         student ? createStudentProfileLink(`${student.first_name} ${student.last_name}`, student.id, 'finance', 'finance') : 'Student unavailable',
         invoice.invoice_number, formatKes(invoice.amount), invoice.due_on || '—', invoice.status,
       ]);
+    });
+    clearTable('receipts-table'); recentPayments = new Map();
+    (paymentsResult.data || []).forEach((payment) => {
+      const student = Array.isArray(payment.students) ? payment.students[0] : payment.students;
+      recentPayments.set(payment.id, payment);
+      const receiptButton = document.createElement('button'); receiptButton.type = 'button'; receiptButton.className = 'text-button'; receiptButton.dataset.receiptDownload = payment.id; receiptButton.textContent = 'Download receipt';
+      appendTableRow('receipts-table', [payment.receipt_number, student ? createStudentProfileLink(`${student.first_name} ${student.last_name}`, student.id, 'finance', 'finance') : 'Student unavailable', formatKes(payment.amount), payment.method, new Date(payment.received_at).toLocaleDateString(), receiptButton]);
     });
   } catch (error) {
     setText('finance-message', friendlyDbError(error, 'Unable to load finance data. Apply Phase 5 and Phase 6, then try again.'));
@@ -83,7 +122,7 @@ async function openInvoiceForm() {
   try {
     await loadStudentsInto('invoice-student');
     document.querySelector('#invoice-form').reset();
-    document.querySelector('#invoice-number').value = createReference('INV');
+    document.querySelector('#invoice-number').value = createReference('FEE');
     document.querySelector('#invoice-due-on').value = new Date().toISOString().slice(0, 10);
     setFormMessage('invoice-form-message');
     openDialog('invoice-modal');
@@ -96,7 +135,7 @@ async function submitInvoice(event) {
   event.preventDefault();
   if (!requireAdministrator()) return;
   const button = document.querySelector('#save-invoice');
-  setButtonBusy(button, true, 'Issuing…', 'Issue invoice');
+  setButtonBusy(button, true, 'Saving…', 'Save fee charge');
   setFormMessage('invoice-form-message');
   try {
     const { error } = await state.client.from('invoices').insert({
@@ -108,12 +147,12 @@ async function submitInvoice(event) {
     });
     if (error) throw error;
     closeDialog('invoice-modal');
-    showToast('Invoice issued successfully.');
+    showToast('Fee charge saved successfully.');
     await loadFinance();
   } catch (error) {
     setFormMessage('invoice-form-message', friendlyDbError(error, 'Could not issue the invoice.'));
   } finally {
-    setButtonBusy(button, false, '', 'Issue invoice');
+    setButtonBusy(button, false, '', 'Save fee charge');
   }
 }
 
@@ -140,7 +179,7 @@ async function submitPayment(event) {
   setButtonBusy(button, true, 'Recording…', 'Record payment');
   setFormMessage('payment-form-message');
   try {
-    const { error } = await state.client.from('payments').insert({
+    const { data: payment, error } = await state.client.from('payments').insert({
       student_id: invoice.student_id,
       invoice_id: invoice.id,
       receipt_number: document.querySelector('#payment-receipt').value.trim(),
@@ -148,11 +187,15 @@ async function submitPayment(event) {
       method: document.querySelector('#payment-method').value,
       reference: document.querySelector('#payment-reference').value.trim() || null,
       recorded_by: state.user.id,
-    });
+    }).select('id, receipt_number, amount, method, reference, received_at, students(id, registration_number, first_name, last_name, personal_email), invoices(invoice_number)').single();
     if (error) throw error;
+    const { data: paymentRows, error: totalError } = await state.client.from('payments').select('amount').eq('invoice_id', invoice.id);
+    if (totalError) throw totalError;
+    payment.balance = Math.max(0, Number(invoice.amount) - (paymentRows || []).reduce((sum, row) => sum + Number(row.amount || 0), 0));
     closeDialog('payment-modal');
-    showToast('Payment recorded and invoice status updated.');
+    showToast('Payment recorded. Receipt is ready to download.');
     await loadFinance();
+    showConfirmation(payment);
   } catch (error) {
     setFormMessage('payment-form-message', friendlyDbError(error, 'Could not record this payment.'));
   } finally {
@@ -165,4 +208,8 @@ export function initFinance() {
   document.querySelector('#record-payment').addEventListener('click', openPaymentForm);
   document.querySelector('#invoice-form').addEventListener('submit', submitInvoice);
   document.querySelector('#payment-form').addEventListener('submit', submitPayment);
+  document.querySelector('#receipts-table').addEventListener('click', (event) => {
+    const button = event.target.closest('[data-receipt-download]');
+    if (button) downloadReceipt(recentPayments.get(button.dataset.receiptDownload));
+  });
 }

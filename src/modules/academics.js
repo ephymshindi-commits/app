@@ -1,6 +1,6 @@
 import {
   appendTableRow, clearTable, closeDialog, friendlyDbError, openDialog,
-  requireAdministrator, setButtonBusy, setFormMessage, setText, showToast, state,
+  formatKes, requireAdministrator, setButtonBusy, setFormMessage, setText, showToast, state,
 } from './core.js';
 
 function option(label, value = '') {
@@ -33,6 +33,21 @@ async function loadAcademicYearOptions() {
   (data || []).forEach((year) => select.append(option(year.name, year.id)));
 }
 
+async function loadFeeStructureOptions() {
+  const [programmes, years] = await Promise.all([
+    state.client.from('programmes').select('id, name, code').order('name'),
+    state.client.from('academic_years').select('id, name, starts_on').order('starts_on', { ascending: false }),
+  ]);
+  if (programmes.error) throw programmes.error;
+  if (years.error) throw years.error;
+  const programmeSelect = document.querySelector('#fee-programme');
+  const yearSelect = document.querySelector('#fee-academic-year');
+  programmeSelect.replaceChildren(option('Select programme'));
+  yearSelect.replaceChildren(option('Select academic year'));
+  (programmes.data || []).forEach((programme) => programmeSelect.append(option(`${programme.name} (${programme.code})`, programme.id)));
+  (years.data || []).forEach((year) => yearSelect.append(option(year.name, year.id)));
+}
+
 function relation(record) {
   return Array.isArray(record) ? record[0] : record;
 }
@@ -47,13 +62,14 @@ export async function loadAcademics() {
   setText('units-message', 'Loading units…');
   setText('calendar-message', 'Loading academic calendar…');
   try {
-    const [programmesResult, unitsResult, yearsResult, semestersResult] = await Promise.all([
+    const [programmesResult, unitsResult, yearsResult, semestersResult, feesResult] = await Promise.all([
       state.client.from('programmes').select('id, name, code, duration_years, active, departments(name)').order('name'),
       state.client.from('units').select('id, name, code, year_of_study, semester_number, credit_hours, programmes(name, code)').order('code'),
       state.client.from('academic_years').select('id, name, starts_on, ends_on, active').order('starts_on', { ascending: false }),
       state.client.from('semesters').select('id, name, starts_on, ends_on, academic_years(name)').order('starts_on', { ascending: false }),
+      state.client.from('fee_structures').select('id, amount, year_of_study, programmes(name, code), academic_years(name)').order('amount', { ascending: false }),
     ]);
-    [programmesResult, unitsResult, yearsResult, semestersResult].forEach((result) => { if (result.error) throw result.error; });
+    [programmesResult, unitsResult, yearsResult, semestersResult, feesResult].forEach((result) => { if (result.error) throw result.error; });
     clearTable('programmes-table');
     (programmesResult.data || []).forEach((programme) => appendTableRow('programmes-table', [
       `${programme.name} (${programme.code})`, relation(programme.departments)?.name || '—', `${programme.duration_years} year${Number(programme.duration_years) === 1 ? '' : 's'}`, programme.active ? 'Active' : 'Inactive',
@@ -75,15 +91,48 @@ export async function loadAcademics() {
       if (!entries.length) appendTableRow('calendar-table', [year.active ? `${year.name} (Current)` : year.name, 'No semesters yet', `${dateText(year.starts_on)} – ${dateText(year.ends_on)}`]);
       entries.forEach((semester) => appendTableRow('calendar-table', [year.active ? `${year.name} (Current)` : year.name, semester.name, `${dateText(semester.starts_on)} – ${dateText(semester.ends_on)}`]));
     });
+    clearTable('fee-structures-table');
+    (feesResult.data || []).forEach((fee) => appendTableRow('fee-structures-table', [
+      `${relation(fee.programmes)?.name || 'Programme'} (${relation(fee.programmes)?.code || '—'})`, relation(fee.academic_years)?.name || '—', `Year ${fee.year_of_study}`, formatKes(fee.amount),
+    ]));
     setText('programmes-message', programmesResult.data?.length ? '' : 'No programmes yet. Add the first programme to begin.');
     setText('units-message', unitsResult.data?.length ? '' : 'No units yet.');
     setText('calendar-message', yearsResult.data?.length ? '' : 'No academic years yet.');
+    setText('fee-structures-message', feesResult.data?.length ? 'Only administrators can change programme fees.' : 'No programme fees configured yet.');
   } catch (error) {
     const message = friendlyDbError(error, 'Unable to load academic setup.');
     setText('programmes-message', message);
     setText('units-message', message);
     setText('calendar-message', message);
   }
+}
+
+async function openFeeStructureDialog() {
+  if (!requireAdministrator()) return;
+  try {
+    await loadFeeStructureOptions();
+    document.querySelector('#fee-structure-form').reset();
+    document.querySelector('#fee-year-of-study').value = '1';
+    setFormMessage('fee-structure-form-message'); openDialog('fee-structure-modal');
+  } catch (error) { showToast(friendlyDbError(error, 'Unable to prepare the fee structure form.')); }
+}
+
+async function submitFeeStructure(event) {
+  event.preventDefault();
+  if (!requireAdministrator()) return;
+  const button = document.querySelector('#save-fee-structure');
+  setButtonBusy(button, true, 'Saving…', 'Save fee structure'); setFormMessage('fee-structure-form-message');
+  try {
+    const { error } = await state.client.from('fee_structures').upsert({
+      programme_id: document.querySelector('#fee-programme').value,
+      academic_year_id: document.querySelector('#fee-academic-year').value,
+      year_of_study: Number(document.querySelector('#fee-year-of-study').value),
+      amount: Number(document.querySelector('#fee-amount').value),
+    }, { onConflict: 'programme_id,academic_year_id,year_of_study' });
+    if (error) throw error;
+    closeDialog('fee-structure-modal'); showToast('Programme fee structure saved.'); await loadAcademics();
+  } catch (error) { setFormMessage('fee-structure-form-message', friendlyDbError(error, 'Could not save this fee structure.')); }
+  finally { setButtonBusy(button, false, '', 'Save fee structure'); }
 }
 
 async function openSetupDialog(dialogId, loader, formId, messageId) {
@@ -168,8 +217,10 @@ export function initAcademics() {
   document.querySelector('#add-unit').addEventListener('click', () => openSetupDialog('unit-modal', loadProgrammeOptions, 'unit-form', 'unit-form-message'));
   document.querySelector('#add-academic-year').addEventListener('click', () => openSetupDialog('academic-year-modal', null, 'academic-year-form', 'academic-year-form-message'));
   document.querySelector('#add-semester').addEventListener('click', () => openSetupDialog('semester-modal', loadAcademicYearOptions, 'semester-form', 'semester-form-message'));
+  document.querySelector('#set-programme-fee').addEventListener('click', openFeeStructureDialog);
   document.querySelector('#programme-form').addEventListener('submit', submitProgramme);
   document.querySelector('#unit-form').addEventListener('submit', submitUnit);
   document.querySelector('#academic-year-form').addEventListener('submit', submitAcademicYear);
   document.querySelector('#semester-form').addEventListener('submit', submitSemester);
+  document.querySelector('#fee-structure-form').addEventListener('submit', submitFeeStructure);
 }

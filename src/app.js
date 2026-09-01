@@ -18,6 +18,7 @@ import { initInsights, loadAnalytics, loadReports } from './modules/insights.js'
 import { initAssessments, loadAssessments } from './modules/assessments.js';
 import { initSettings, loadSettings } from './modules/settings.js';
 import { initHelp } from './modules/help.js';
+import { initLiveClasses, loadLiveClasses } from './modules/live-classes.js';
 
 const appShell = document.querySelector('#app-shell');
 const authScreen = document.querySelector('#auth-screen');
@@ -34,7 +35,7 @@ const viewLoaders = {
   attendance: loadAttendance,
   results: loadResults,
   learning: loadCourses,
-  assessments: loadAssessments,
+  assessments: async () => { await Promise.all([loadAssessments(), loadLiveClasses()]); },
   timetable: loadTimetable,
   analytics: loadAnalytics,
   library: loadLibrary,
@@ -185,5 +186,6 @@ initInsights();
 initAssessments();
 initSettings();
 initHelp();
+initLiveClasses();
 initSharedInteractions();
 initializeAuth();
