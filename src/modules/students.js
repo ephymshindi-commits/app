@@ -54,7 +54,7 @@ function drawStudents(rows) {
       student.phone || student.personal_email || '—',
       new Date(`${student.admitted_at}T00:00:00`).toLocaleDateString(),
       student.status,
-      actionButton('Edit', 'edit', student.id),
+      (() => { const wrap = document.createElement('div'); wrap.className = 'button-row'; wrap.append(actionButton('Edit', 'edit', student.id), actionButton(student.profile_id ? 'Login active' : 'Create login', 'login', student.id)); return wrap; })(),
     ]);
   });
 }
@@ -64,7 +64,7 @@ export async function loadStudents(query = '') {
   setText('student-table-message', 'Loading students…');
   let request = state.client
     .from('students')
-    .select('id, registration_number, first_name, last_name, phone, personal_email, status, admitted_at, programme_id, next_of_kin_name, next_of_kin_relationship, next_of_kin_phone, programmes(name)')
+    .select('id, registration_number, first_name, last_name, phone, personal_email, profile_id, status, admitted_at, programme_id, next_of_kin_name, next_of_kin_relationship, next_of_kin_phone, programmes(name)')
     .order('created_at', { ascending: false })
     .limit(PAGE_SIZE);
   const term = query.trim();
@@ -79,6 +79,32 @@ export async function loadStudents(query = '') {
   } catch (error) {
     setText('student-table-message', friendlyDbError(error, 'Unable to load students. Please try again.'));
   }
+}
+
+async function openStudentLogin(studentId) {
+  const { data: student, error } = await state.client.from('students').select('id, first_name, last_name, registration_number, personal_email, profile_id').eq('id', studentId).maybeSingle();
+  if (error || !student) return showToast('Unable to open that student account.');
+  if (student.profile_id) return showToast('This student already has a login account.');
+  document.querySelector('#student-login-form').reset();
+  document.querySelector('#student-login-id').value = student.id;
+  setText('student-login-name', `${student.first_name} ${student.last_name} · ${student.registration_number}`);
+  document.querySelector('#student-login-email').value = student.personal_email || '';
+  setFormMessage('student-login-form-message'); openDialog('student-login-modal');
+}
+
+async function createStudentLogin(event) {
+  event.preventDefault();
+  const button = document.querySelector('#save-student-login'); const password = document.querySelector('#student-login-password').value;
+  setButtonBusy(button, true, 'Creating…', 'Create login'); setFormMessage('student-login-form-message');
+  try {
+    const { data, error } = await state.client.functions.invoke('admin-create-student-login', { body: { studentId: document.querySelector('#student-login-id').value, email: document.querySelector('#student-login-email').value.trim(), temporaryPassword: password } });
+    if (error || data?.error) throw error || new Error(data.error);
+    closeDialog('student-login-modal');
+    document.querySelector('#student-login-details').textContent = `Student: ${data.account.fullName}\nRegistration number: ${data.account.registrationNumber}\nEmail: ${data.account.email}\nTemporary password: ${password}`;
+    openDialog('student-login-details-modal'); showToast('Student login created. Give the details to the student securely.');
+    await loadStudents(document.querySelector('#student-search').value);
+  } catch (error) { setFormMessage('student-login-form-message', error?.message || 'Could not create the student login.'); }
+  finally { setButtonBusy(button, false, '', 'Create login'); }
 }
 
 function resetStudentForm() {
@@ -153,12 +179,15 @@ export function initStudents() {
   });
   document.querySelector('#student-form').addEventListener('submit', submitStudent);
   document.querySelector('#student-table').addEventListener('click', async (event) => {
-    const button = event.target.closest('[data-student-action="edit"]');
+    const button = event.target.closest('[data-student-action]');
     if (!button) return;
+    if (button.dataset.studentAction === 'login') return openStudentLogin(button.dataset.studentId);
+    if (button.dataset.studentAction !== 'edit') return;
     const { data, error } = await state.client.from('students')
       .select('id, first_name, last_name, registration_number, programme_id, personal_email, phone, next_of_kin_name, next_of_kin_relationship, next_of_kin_phone, status')
       .eq('id', button.dataset.studentId).maybeSingle();
     if (error || !data) return showToast('Unable to open that student record.');
     openStudentForm(data);
   });
+  document.querySelector('#student-login-form').addEventListener('submit', createStudentLogin);
 }
