@@ -47,18 +47,9 @@
 }
 
 .auth-aside {
-  align-items: center;
+  background: #173c9b url('https://res.cloudinary.com/ywbvk3ek/image/upload/c_fill,g_auto,h_1200,w_1100/IMG-20260901-WA0008_1') center / cover no-repeat;
+  padding: 0;
   overflow: hidden;
-}
-
-.school-photo {
-  width: min(100%, 760px);
-  height: min(74vh, 680px);
-  object-fit: cover;
-  object-position: center;
-  border: 8px solid #ffffff;
-  border-radius: 22px;
-  box-shadow: 0 24px 60px #102a633d;
 }
 
 .institution {
