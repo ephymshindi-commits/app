@@ -41,7 +41,7 @@ The Staff & roles screen creates an Auth invitation through a protected Edge Fun
 
 1. Apply `phase-6-operations-workflows.sql` after the previous migrations.
 2. Deploy [supabase/functions/admin-create-worker/index.ts](supabase/functions/admin-create-worker/index.ts) as `admin-create-worker`.
-3. Add `SUPABASE_SERVICE_ROLE_KEY` as an Edge Function secret. Supabase provides `SUPABASE_URL` and `SUPABASE_ANON_KEY` in deployed functions; never put the service-role key in `src/app-config.js` or any browser file.
+3. No custom service-role secret is required: the function reads Supabase's built-in protected key environment variables. Never put any secret/service-role key in `src/app-config.js` or another browser file.
 4. Add the deployed application URL in **Authentication → URL Configuration → Redirect URLs** so invited workers can complete account setup.
 
 After this setup, administrators can securely invite trainers or administrators, record employee details, issue invoices, record linked payments, create course spaces and enrol students from the application.

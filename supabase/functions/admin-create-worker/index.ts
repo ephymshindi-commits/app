@@ -8,6 +8,17 @@ const corsHeaders = {
 const allowedRoles = new Set(['administrator', 'trainer']);
 const allowedStatuses = new Set(['active', 'on_leave', 'inactive']);
 
+function readPlatformKey(dictionaryName: string, legacyName: string) {
+  const legacyKey = Deno.env.get(legacyName);
+  if (legacyKey) return legacyKey;
+  try {
+    const keys = JSON.parse(Deno.env.get(dictionaryName) ?? '{}') as Record<string, string>;
+    return Object.values(keys)[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function response(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -23,14 +34,14 @@ Deno.serve(async (request) => {
   if (!authorization) return response({ error: 'Authentication is required.' }, 401);
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (!supabaseUrl || !anonKey || !serviceRoleKey) {
+  const publishableKey = readPlatformKey('SUPABASE_PUBLISHABLE_KEYS', 'SUPABASE_ANON_KEY');
+  const serviceRoleKey = readPlatformKey('SUPABASE_SECRET_KEYS', 'SUPABASE_SERVICE_ROLE_KEY');
+  if (!supabaseUrl || !publishableKey || !serviceRoleKey) {
     console.error('Required Supabase function environment variables are missing.');
     return response({ error: 'Worker provisioning is not configured.' }, 500);
   }
 
-  const callerClient = createClient(supabaseUrl, anonKey, {
+  const callerClient = createClient(supabaseUrl, publishableKey, {
     global: { headers: { Authorization: authorization } },
   });
   const { data: callerData, error: callerError } = await callerClient.auth.getUser();
