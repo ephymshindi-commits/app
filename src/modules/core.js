@@ -104,8 +104,8 @@ export function renderPageTitle(target) {
   const pageNames = {
     dashboard: `Welcome back, ${state.firstName}`,
     students: 'Student management', workers: 'Staff & roles', academics: 'Academic management',
-    finance: 'Finance management', attendance: 'Attendance', results: 'Results management', timetable: 'Timetable',
-    analytics: 'Learning analytics', library: 'Digital library', announcements: 'Announcements', reports: 'Reports',
+    finance: 'Finance management', attendance: 'Attendance', results: 'Results management', assessments: 'Online assessments', timetable: 'Timetable',
+    analytics: 'Learning analytics', library: 'Digital library', announcements: 'Announcements', reports: 'Reports', settings: 'Settings',
     learning: 'Digital learning space', 'student-profile': 'Student profile',
   };
   const title = document.querySelector('#page-title');
