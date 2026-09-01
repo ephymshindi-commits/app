@@ -15,6 +15,9 @@ import { initAttendance, loadAttendance } from './modules/attendance.js';
 import { initLibrary, loadLibrary } from './modules/library.js';
 import { initAnnouncements, loadAnnouncements } from './modules/announcements.js';
 import { initInsights, loadAnalytics, loadReports } from './modules/insights.js';
+import { initAssessments, loadAssessments } from './modules/assessments.js';
+import { initSettings, loadSettings } from './modules/settings.js';
+import { initHelp } from './modules/help.js';
 
 const appShell = document.querySelector('#app-shell');
 const authScreen = document.querySelector('#auth-screen');
@@ -31,16 +34,16 @@ const viewLoaders = {
   attendance: loadAttendance,
   results: loadResults,
   learning: loadCourses,
+  assessments: loadAssessments,
   timetable: loadTimetable,
   analytics: loadAnalytics,
   library: loadLibrary,
   announcements: loadAnnouncements,
   reports: loadReports,
+  settings: loadSettings,
 };
 
-const unavailableViews = new Set([
-  'assessments', 'settings',
-]);
+const unavailableViews = new Set();
 
 function showComingSoon() {
   document.querySelector('#coming-soon-title').textContent = 'Coming soon';
@@ -82,6 +85,7 @@ async function renderSession(session) {
   authScreen.hidden = true;
   appShell.hidden = false;
   await loadProfile(session.user);
+  await loadSettings();
   setAdministratorControls();
   if (isAdministrator()) await loadDashboard();
 }
@@ -178,5 +182,8 @@ initAttendance();
 initLibrary();
 initAnnouncements();
 initInsights();
+initAssessments();
+initSettings();
+initHelp();
 initSharedInteractions();
 initializeAuth();

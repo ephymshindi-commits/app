@@ -12,4 +12,9 @@
 .announcement-meta { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 11px; margin-top: 15px; }
 .library-card a { display: inline-block; margin-top: 14px; color: var(--blue); font: 700 12px inherit; text-decoration: none; }
 .library-card a:hover { text-decoration: underline; }
+.help-guides { display: grid; gap: 12px; margin: 2px 0 20px; }
+.help-guides article { border: 1px solid var(--line); border-radius: 9px; padding: 13px; }
+.help-guides strong { font-size: 13px; }
+.help-guides p { margin-top: 5px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+#help-contact-link { display: inline-flex; text-decoration: none; margin-bottom: 4px; }
 @media (max-width: 520px) { .attendance-roster-row { align-items: flex-start; flex-direction: column; gap: 8px; } .attendance-roster-row select { width: 100%; } }
