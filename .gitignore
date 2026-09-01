@@ -1,0 +1,10 @@
+# Browser-only Supabase configuration. Keep the publishable key local and never
+# add a service-role/secret credential to any client-side file.
+src/app-config.js
+
+# Local Supabase Management API token (never commit this file).
+.env
+supabase/.env.local
+.vercel
+.vercel-deploy
+node_modules/
