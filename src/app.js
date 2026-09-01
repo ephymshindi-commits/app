@@ -8,6 +8,9 @@ import { initStaff, loadWorkers } from './modules/staff.js';
 import { initFinance, loadFinance } from './modules/finance.js';
 import { initCourses, loadCourses } from './modules/courses.js';
 import { initStudentProfile, openStudentProfile } from './modules/student-profile.js';
+import { initAcademics, loadAcademics } from './modules/academics.js';
+import { initResults, loadResults } from './modules/results.js';
+import { initTimetable, loadTimetable } from './modules/timetable.js';
 
 const appShell = document.querySelector('#app-shell');
 const authScreen = document.querySelector('#auth-screen');
@@ -19,12 +22,15 @@ const viewLoaders = {
   dashboard: loadDashboard,
   students: loadStudents,
   workers: loadWorkers,
+  academics: loadAcademics,
   finance: loadFinance,
+  results: loadResults,
   learning: loadCourses,
+  timetable: loadTimetable,
 };
 
 const unavailableViews = new Set([
-  'academics', 'attendance', 'results', 'assessments', 'timetable', 'analytics',
+  'attendance', 'assessments', 'analytics',
   'library', 'announcements', 'reports', 'settings',
 ]);
 
@@ -37,6 +43,9 @@ function showComingSoon() {
 function setAdministratorControls() {
   document.querySelectorAll('[data-admin-only]').forEach((element) => {
     element.hidden = !isAdministrator();
+  });
+  document.querySelectorAll('[data-staff-only]').forEach((element) => {
+    element.hidden = !['administrator', 'trainer'].includes(state.role);
   });
 }
 
@@ -52,7 +61,7 @@ async function showView(target) {
   renderPageTitle(target);
   window.scrollTo({ top: 0, behavior: 'smooth' });
   document.querySelector('.sidebar').classList.remove('open');
-  if (viewLoaders[target] && isAdministrator()) await viewLoaders[target]();
+  if (viewLoaders[target]) await viewLoaders[target]();
 }
 
 async function renderSession(session) {
@@ -154,5 +163,8 @@ initStaff();
 initFinance();
 initCourses();
 initStudentProfile();
+initAcademics();
+initResults();
+initTimetable();
 initSharedInteractions();
 initializeAuth();
