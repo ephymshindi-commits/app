@@ -2,6 +2,7 @@ import {
   state, appendTableRow, clearTable, closeDialog, formatKes, friendlyDbError, openDialog,
   requireAdministrator, setButtonBusy, setFormMessage, setText, showToast,
 } from './core.js';
+import { createStudentProfileLink } from './student-profile.js';
 
 let openInvoices = new Map();
 
@@ -49,7 +50,7 @@ export async function loadFinance() {
     const [summaryResult, invoicesResult] = await Promise.all([
       state.client.from('institution_operational_summary').select('*').single(),
       state.client.from('invoices')
-        .select('id, invoice_number, amount, due_on, status, students(registration_number, first_name, last_name)')
+        .select('id, invoice_number, amount, due_on, status, students(id, registration_number, first_name, last_name)')
         .order('created_at', { ascending: false }).limit(50),
     ]);
     if (summaryResult.error) throw summaryResult.error;
@@ -68,7 +69,7 @@ export async function loadFinance() {
     invoices.forEach((invoice) => {
       const student = Array.isArray(invoice.students) ? invoice.students[0] : invoice.students;
       appendTableRow('finance-table', [
-        student ? `${student.first_name} ${student.last_name}` : 'Student unavailable',
+        student ? createStudentProfileLink(`${student.first_name} ${student.last_name}`, student.id, 'finance', 'finance') : 'Student unavailable',
         invoice.invoice_number, formatKes(invoice.amount), invoice.due_on || '—', invoice.status,
       ]);
     });

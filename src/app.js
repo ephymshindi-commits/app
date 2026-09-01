@@ -7,6 +7,7 @@ import { initStudents, loadStudents } from './modules/students.js';
 import { initStaff, loadWorkers } from './modules/staff.js';
 import { initFinance, loadFinance } from './modules/finance.js';
 import { initCourses, loadCourses } from './modules/courses.js';
+import { initStudentProfile, openStudentProfile } from './modules/student-profile.js';
 
 const appShell = document.querySelector('#app-shell');
 const authScreen = document.querySelector('#auth-screen');
@@ -126,6 +127,12 @@ function initSharedInteractions() {
       showToast('Could not sign out. Check your connection and try again.');
     }
   });
+  document.addEventListener('student-profile:open', async (event) => {
+    const { studentId, tab, source } = event.detail;
+    await showView('student-profile');
+    await openStudentProfile(studentId, tab, source);
+  });
+  document.addEventListener('student-profile:back', ({ detail }) => showView(detail.source || 'students'));
 }
 
 async function initializeAuth() {
@@ -146,5 +153,6 @@ initStudents();
 initStaff();
 initFinance();
 initCourses();
+initStudentProfile();
 initSharedInteractions();
 initializeAuth();

@@ -2,6 +2,7 @@ import {
   state, appendTableRow, clearTable, closeDialog, friendlyDbError, initials,
   openDialog, requireAdministrator, setButtonBusy, setFormMessage, setText, showToast,
 } from './core.js';
+import { createStudentProfileLink } from './student-profile.js';
 
 const PAGE_SIZE = 200;
 let searchTimer;
@@ -43,8 +44,7 @@ function drawStudents(rows) {
     const avatar = document.createElement('span');
     avatar.className = `table-avatar ${['blue', 'orange', 'green', 'purple'][index % 4]}`;
     avatar.textContent = initials(fullName);
-    const copy = document.createElement('strong');
-    copy.textContent = fullName;
+    const copy = createStudentProfileLink(fullName, student.id, 'overview', 'students');
     name.append(avatar, copy);
     const programme = Array.isArray(student.programmes) ? student.programmes[0] : student.programmes;
     appendTableRow('student-table', [

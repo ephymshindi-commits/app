@@ -104,7 +104,7 @@ export function renderPageTitle(target) {
   const pageNames = {
     dashboard: `Welcome back, ${state.firstName}`,
     students: 'Student management', workers: 'Staff & roles', academics: 'Academic management',
-    finance: 'Finance management', learning: 'Digital learning space',
+    finance: 'Finance management', learning: 'Digital learning space', 'student-profile': 'Student profile',
   };
   const title = document.querySelector('#page-title');
   if (!title) return;

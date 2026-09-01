@@ -1,0 +1,60 @@
+.student-link {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 700 12px inherit;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.student-link:hover,
+.student-link:focus-visible {
+  color: var(--blue);
+  text-decoration: underline;
+}
+
+.student-profile-heading .text-button {
+  margin: 0 0 14px;
+  font-size: 12px;
+}
+
+.student-summary {
+  display: grid;
+  grid-template-columns: auto minmax(180px, .7fr) 2fr;
+  align-items: center;
+  gap: 18px;
+}
+
+.student-profile-avatar {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-weight: 800;
+}
+
+.student-summary strong { font: 700 16px 'Plus Jakarta Sans'; }
+.student-summary p { margin-top: 5px; color: var(--muted); font-size: 12px; }
+.student-summary dl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 0; }
+.student-summary dt { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.student-summary dd { margin: 5px 0 0; color: var(--ink); font-size: 12px; }
+
+.profile-tabs { display: flex; gap: 6px; margin: 22px 0 15px; border-bottom: 1px solid var(--line); }
+.profile-tab { border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); padding: 10px 12px; font: 700 12px inherit; cursor: pointer; }
+.profile-tab.active { color: var(--blue); border-color: var(--blue); }
+.student-profile-content .stats-grid { margin-top: 0; }
+.student-profile-content .panel { margin-top: 16px; }
+
+@media (max-width: 850px) {
+  .student-summary { grid-template-columns: auto 1fr; }
+  .student-summary dl { grid-column: 1 / -1; }
+}
+
+@media (max-width: 520px) {
+  .student-summary dl { grid-template-columns: 1fr; gap: 12px; }
+}
