@@ -1,0 +1,15 @@
+.form-full-width { grid-column: 1 / -1; }
+.attendance-roster { margin-top: 18px; max-height: 340px; overflow: auto; border-top: 1px solid var(--line); }
+.attendance-roster-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 11px 3px; border-bottom: 1px solid var(--line); }
+.attendance-roster-row strong, .attendance-roster-row small { display: block; }
+.attendance-roster-row small { color: var(--muted); margin-top: 3px; font-size: 11px; }
+.attendance-roster-row select { width: 130px; border: 1px solid #dce2ec; border-radius: 7px; padding: 8px; font: 12px inherit; color: var(--ink); }
+.announcements-list { display: grid; gap: 14px; }
+.announcement-card { padding: 20px; }
+.announcement-card header { min-height: 0; margin-bottom: 13px; }
+.announcement-card h3 { font: 700 16px 'Plus Jakarta Sans'; }
+.announcement-card p { color: var(--muted); line-height: 1.65; white-space: pre-wrap; }
+.announcement-meta { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 11px; margin-top: 15px; }
+.library-card a { display: inline-block; margin-top: 14px; color: var(--blue); font: 700 12px inherit; text-decoration: none; }
+.library-card a:hover { text-decoration: underline; }
+@media (max-width: 520px) { .attendance-roster-row { align-items: flex-start; flex-direction: column; gap: 8px; } .attendance-roster-row select { width: 100%; } }

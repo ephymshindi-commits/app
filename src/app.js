@@ -11,6 +11,10 @@ import { initStudentProfile, openStudentProfile } from './modules/student-profil
 import { initAcademics, loadAcademics } from './modules/academics.js';
 import { initResults, loadResults } from './modules/results.js';
 import { initTimetable, loadTimetable } from './modules/timetable.js';
+import { initAttendance, loadAttendance } from './modules/attendance.js';
+import { initLibrary, loadLibrary } from './modules/library.js';
+import { initAnnouncements, loadAnnouncements } from './modules/announcements.js';
+import { initInsights, loadAnalytics, loadReports } from './modules/insights.js';
 
 const appShell = document.querySelector('#app-shell');
 const authScreen = document.querySelector('#auth-screen');
@@ -24,14 +28,18 @@ const viewLoaders = {
   workers: loadWorkers,
   academics: loadAcademics,
   finance: loadFinance,
+  attendance: loadAttendance,
   results: loadResults,
   learning: loadCourses,
   timetable: loadTimetable,
+  analytics: loadAnalytics,
+  library: loadLibrary,
+  announcements: loadAnnouncements,
+  reports: loadReports,
 };
 
 const unavailableViews = new Set([
-  'attendance', 'assessments', 'analytics',
-  'library', 'announcements', 'reports', 'settings',
+  'assessments', 'settings',
 ]);
 
 function showComingSoon() {
@@ -166,5 +174,9 @@ initStudentProfile();
 initAcademics();
 initResults();
 initTimetable();
+initAttendance();
+initLibrary();
+initAnnouncements();
+initInsights();
 initSharedInteractions();
 initializeAuth();
