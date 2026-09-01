@@ -1,0 +1,55 @@
+:root {
+  --college-navy: #123467;
+  --college-gold: #b88726;
+}
+
+.brand,
+.auth-brand {
+  gap: 12px;
+}
+
+.college-logo {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+.auth-brand .college-logo {
+  width: 54px;
+  height: 54px;
+  flex-basis: 54px;
+}
+
+.brand > span,
+.auth-brand > span {
+  color: var(--college-navy);
+  font-size: 13px;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+}
+
+.auth-brand > span {
+  font-size: 15px;
+}
+
+.brand b,
+.auth-brand b {
+  display: block;
+  color: var(--college-gold);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+}
+
+.institution {
+  line-height: 1.45;
+}
+
+@media (max-width: 700px) {
+  .college-logo {
+    width: 38px;
+    height: 38px;
+    flex-basis: 38px;
+  }
+}
