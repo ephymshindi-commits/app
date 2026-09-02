@@ -4,6 +4,7 @@ import {
 } from './core.js';
 import { createStudentProfileLink } from './student-profile.js';
 import { loadOperationalSummary } from './operational-summary.js';
+import { receiptDocument } from './receipt-template.js';
 
 let openInvoices = new Map();
 let recentPayments = new Map();
@@ -16,16 +17,6 @@ function createReference(prefix) {
   const timestamp = new Date().toISOString().replace(/[-:TZ.]/g, '').slice(0, 12);
   const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
   return `${prefix}-${timestamp}-${suffix}`;
-}
-
-function escapeHtml(value = '') {
-  return String(value).replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]));
-}
-
-function receiptDocument(payment) {
-  const student = Array.isArray(payment.students) ? payment.students[0] : payment.students;
-  const invoice = Array.isArray(payment.invoices) ? payment.invoices[0] : payment.invoices;
-  return `<!doctype html><html><head><meta charset="utf-8"><title>Receipt ${escapeHtml(payment.receipt_number)}</title><style>body{font:15px Arial;color:#172345;max-width:700px;margin:45px auto;padding:0 24px}.head{border-bottom:3px solid #2764e7;padding-bottom:18px}h1{margin:0;font-size:25px}h2{font-size:18px;margin-top:28px}dl{display:grid;grid-template-columns:180px 1fr;gap:12px}dt{font-weight:700;color:#5c6a80}dd{margin:0}.amount{font-size:30px;font-weight:800;color:#2764e7;margin:22px 0}.note{margin-top:36px;padding-top:14px;border-top:1px solid #ddd;color:#5c6a80}@media print{body{margin:0}}</style></head><body><div class="head"><h1>LOVE &amp; TRUTH BIBLE AND SKILLS TRAINING COLLEGE</h1><p>Official payment receipt</p></div><h2>Receipt ${escapeHtml(payment.receipt_number)}</h2><dl><dt>Student</dt><dd>${escapeHtml(`${student?.first_name || ''} ${student?.last_name || ''}`.trim())}</dd><dt>Registration number</dt><dd>${escapeHtml(student?.registration_number || '—')}</dd><dt>Fee charge</dt><dd>${escapeHtml(invoice?.invoice_number || '—')}</dd><dt>Payment method</dt><dd>${escapeHtml(payment.method)}</dd><dt>Transaction reference</dt><dd>${escapeHtml(payment.reference || '—')}</dd><dt>Date received</dt><dd>${escapeHtml(new Date(payment.received_at).toLocaleString())}</dd></dl><p class="amount">Amount paid: ${escapeHtml(formatKes(payment.amount))}</p><p><strong>Account balance after this payment: ${escapeHtml(formatKes(payment.balance || 0))}</strong></p><p class="note">Thank you for your payment. Learning with purpose. Training with excellence.</p></body></html>`;
 }
 
 function downloadReceipt(payment) {
