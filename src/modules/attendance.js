@@ -1,5 +1,5 @@
 import {
-  appendTableRow, clearTable, closeDialog, friendlyDbError, isAdministrator, openDialog,
+  appendTableRow, clearTable, closeDialog, friendlyDbError, isAdministrator, isTrainer, openDialog,
   setButtonBusy, setFormMessage, setText, showToast, state,
 } from './core.js';
 
@@ -9,10 +9,18 @@ function option(label, value = '') { return new Option(label, value); }
 function relation(record) { return Array.isArray(record) ? record[0] : record; }
 
 async function loadAttendanceOptions() {
-  const [unitsResult, semestersResult] = await Promise.all([
-    state.client.from('units').select('id, code, name').order('code'),
-    state.client.from('semesters').select('id, name, starts_on, academic_years(name)').order('starts_on', { ascending: false }),
-  ]);
+  let unitIds = null; let semesterIds = null;
+  if (isTrainer()) {
+    const { data: courses, error } = await state.client.from('learning_courses').select('unit_id, semester_id').eq('trainer_id', state.user.id);
+    if (error) throw error;
+    unitIds = [...new Set((courses || []).map((course) => course.unit_id))];
+    semesterIds = [...new Set((courses || []).map((course) => course.semester_id))];
+  }
+  let unitsQuery = state.client.from('units').select('id, code, name').order('code');
+  let semestersQuery = state.client.from('semesters').select('id, name, starts_on, academic_years(name)').order('starts_on', { ascending: false });
+  if (unitIds) unitsQuery = unitIds.length ? unitsQuery.in('id', unitIds) : unitsQuery.in('id', ['00000000-0000-0000-0000-000000000000']);
+  if (semesterIds) semestersQuery = semesterIds.length ? semestersQuery.in('id', semesterIds) : semestersQuery.in('id', ['00000000-0000-0000-0000-000000000000']);
+  const [unitsResult, semestersResult] = await Promise.all([unitsQuery, semestersQuery]);
   [unitsResult, semestersResult].forEach((result) => { if (result.error) throw result.error; });
   const unit = document.querySelector('#attendance-unit');
   unit.replaceChildren(option('Select unit'));
@@ -25,7 +33,7 @@ async function loadAttendanceOptions() {
 function formatDate(value) { return value ? new Date(value).toLocaleString() : '—'; }
 
 export async function loadAttendance() {
-  if (!isAdministrator()) return;
+  if (!isAdministrator() && !isTrainer()) return;
   setText('attendance-message', 'Loading class registers…');
   try {
     const { data: sessions, error } = await state.client.from('attendance_sessions')
@@ -87,7 +95,7 @@ async function loadRoster() {
 }
 
 async function openAttendanceForm() {
-  if (!isAdministrator()) return showToast('Only administrators can take attendance.');
+  if (!isAdministrator() && !isTrainer()) return showToast('Only academic staff can take attendance.');
   try {
     await loadAttendanceOptions(); rosterStudents = [];
     document.querySelector('#attendance-form').reset();
@@ -99,7 +107,7 @@ async function openAttendanceForm() {
 
 async function saveAttendance(event) {
   event.preventDefault();
-  if (!isAdministrator()) return;
+  if (!isAdministrator() && !isTrainer()) return;
   if (!rosterStudents.length) return setFormMessage('attendance-form-message', 'Load a class register before saving.');
   const button = document.querySelector('#save-attendance');
   setButtonBusy(button, true, 'Saving…', 'Save register'); setFormMessage('attendance-form-message');

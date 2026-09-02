@@ -139,17 +139,22 @@ export function createStudentProfileLink(label, studentId, tab = 'overview', sou
 }
 
 export async function openStudentProfile(studentId, tab = 'overview', source = 'students') {
-  if (!requireAdministrator()) return;
+  if (!requireAdministrator() && state.role !== 'student') return;
   profileState.activeTab = tab;
   profileState.source = source;
   setText('student-profile-name', 'Loading student profile…');
   setText('student-profile-subtitle', 'Retrieving student records.');
   document.querySelector('#student-profile-content').replaceChildren();
   try {
+    if (!studentId) {
+      const { data: ownStudent, error: ownStudentError } = await state.client.from('students').select('id').eq('profile_id', state.user.id).maybeSingle();
+      if (ownStudentError || !ownStudent) throw ownStudentError || new Error('Student profile was not found.');
+      studentId = ownStudent.id;
+    }
     const [studentResult, invoicesResult, paymentsResult] = await Promise.all([
       state.client.from('students').select('id, registration_number, first_name, last_name, phone, personal_email, status, admitted_at, next_of_kin_name, next_of_kin_relationship, next_of_kin_phone, programmes(name, code)').eq('id', studentId).maybeSingle(),
-      state.client.from('invoices').select('id, invoice_number, amount, due_on, status').eq('student_id', studentId).order('created_at', { ascending: false }),
-      state.client.from('payments').select('id, receipt_number, amount, method, received_at, invoices(invoice_number)').eq('student_id', studentId).order('received_at', { ascending: false }),
+      state.role === 'student' ? Promise.resolve({ data: [], error: null }) : state.client.from('invoices').select('id, invoice_number, amount, due_on, status').eq('student_id', studentId).order('created_at', { ascending: false }),
+      state.role === 'student' ? Promise.resolve({ data: [], error: null }) : state.client.from('payments').select('id, receipt_number, amount, method, received_at, invoices(invoice_number)').eq('student_id', studentId).order('received_at', { ascending: false }),
     ]);
     if (studentResult.error) throw studentResult.error;
     if (!studentResult.data) throw new Error('Student record was not found.');
@@ -178,6 +183,7 @@ export function initStudentProfile() {
     } }));
   });
   document.querySelectorAll('[data-profile-tab]').forEach((tab) => tab.addEventListener('click', () => {
+    if (state.role === 'student' && tab.dataset.profileTab === 'finance') return;
     profileState.activeTab = tab.dataset.profileTab;
     renderContent();
   }));

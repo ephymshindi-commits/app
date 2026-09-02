@@ -1,5 +1,5 @@
 import {
-  closeDialog, configureClient, isAdministrator, loadProfile, renderPageTitle,
+  closeDialog, configureClient, isAdministrator, isStudent, isTrainer, loadProfile, renderPageTitle,
   showAuthMessage, showToast, state,
 } from './modules/core.js';
 import { loadDashboard } from './modules/dashboard.js';
@@ -59,9 +59,23 @@ function setAdministratorControls() {
   document.querySelectorAll('[data-staff-only]').forEach((element) => {
     element.hidden = !['administrator', 'trainer'].includes(state.role);
   });
+  document.querySelectorAll('[data-student-only]').forEach((element) => {
+    element.hidden = !isStudent();
+  });
+  document.querySelectorAll('[data-role-view]').forEach((element) => {
+    element.hidden = !element.dataset.roleView.split(',').includes(state.role);
+  });
+}
+
+function canAccessView(target) {
+  if (isAdministrator()) return true;
+  const trainerViews = new Set(['attendance', 'results', 'learning', 'assessments', 'timetable', 'library', 'announcements']);
+  const studentViews = new Set(['student-profile', 'results', 'assessments', 'timetable', 'library', 'announcements']);
+  return isTrainer() ? trainerViews.has(target) : studentViews.has(target);
 }
 
 async function showView(target) {
+  if (!canAccessView(target)) return;
   if (unavailableViews.has(target)) {
     showComingSoon();
     return;
@@ -73,6 +87,10 @@ async function showView(target) {
   renderPageTitle(target);
   window.scrollTo({ top: 0, behavior: 'smooth' });
   document.querySelector('.sidebar').classList.remove('open');
+  if (target === 'student-profile' && isStudent()) {
+    await openStudentProfile(null, 'overview', 'student-profile');
+    return;
+  }
   if (viewLoaders[target]) await viewLoaders[target]();
 }
 
@@ -89,6 +107,8 @@ async function renderSession(session) {
   await loadSettings();
   setAdministratorControls();
   if (isAdministrator()) await loadDashboard();
+  else if (isStudent()) await showView('student-profile');
+  else await showView('learning');
 }
 
 async function handleSignIn(event) {

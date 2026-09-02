@@ -1,5 +1,5 @@
 import {
-  appendTableRow, clearTable, closeDialog, friendlyDbError, isAdministrator, openDialog,
+  appendTableRow, clearTable, closeDialog, friendlyDbError, isAdministrator, isTrainer, openDialog,
   setButtonBusy, setFormMessage, setText, showToast, state,
 } from './core.js';
 import { createStudentProfileLink } from './student-profile.js';
@@ -11,10 +11,20 @@ function relation(record) { return Array.isArray(record) ? record[0] : record; }
 function staffCanManageResults() { return ['administrator', 'trainer'].includes(state.role); }
 
 async function loadFormOptions() {
+  let assignedUnitIds = null; let assignedSemesterIds = null;
+  if (isTrainer()) {
+    const { data: courses, error } = await state.client.from('learning_courses').select('unit_id, semester_id').eq('trainer_id', state.user.id);
+    if (error) throw error;
+    assignedUnitIds = [...new Set((courses || []).map((course) => course.unit_id))];
+    assignedSemesterIds = [...new Set((courses || []).map((course) => course.semester_id))];
+  }
+  let unitQuery = state.client.from('units').select('id, code, name').order('code');
+  let semesterQuery = state.client.from('semesters').select('id, name, starts_on, academic_years(name)').order('starts_on', { ascending: false });
+  if (assignedUnitIds) unitQuery = assignedUnitIds.length ? unitQuery.in('id', assignedUnitIds) : unitQuery.in('id', ['00000000-0000-0000-0000-000000000000']);
+  if (assignedSemesterIds) semesterQuery = assignedSemesterIds.length ? semesterQuery.in('id', assignedSemesterIds) : semesterQuery.in('id', ['00000000-0000-0000-0000-000000000000']);
   const [studentsResult, unitsResult, semestersResult] = await Promise.all([
     state.client.from('students').select('id, registration_number, first_name, last_name').eq('status', 'active').order('registration_number'),
-    state.client.from('units').select('id, code, name').order('code'),
-    state.client.from('semesters').select('id, name, starts_on, academic_years(name)').order('starts_on', { ascending: false }),
+    unitQuery, semesterQuery,
   ]);
   [studentsResult, unitsResult, semestersResult].forEach((result) => { if (result.error) throw result.error; });
   const fields = [
@@ -36,11 +46,11 @@ function actionButton(label, id) {
 }
 
 export async function loadResults() {
-  if (!staffCanManageResults()) return;
+  if (!staffCanManageResults() && state.role !== 'student') return;
   setText('results-message', 'Loading results…');
   try {
     const { data, error } = await state.client.from('unit_results')
-      .select('id, cat_score, exam_score, total_score, grade, status, student_id, students(first_name, last_name, registration_number), units(code, name), semesters(name, academic_years(name))')
+      .select('id, cat_score, exam_score, total_score, grade, status, student_id, entered_by, students(first_name, last_name, registration_number), units(code, name), semesters(name, academic_years(name))')
       .order('updated_at', { ascending: false }).limit(200);
     if (error) throw error;
     clearTable('results-table');
@@ -49,7 +59,7 @@ export async function loadResults() {
       appendTableRow('results-table', [
         student ? createStudentProfileLink(`${student.first_name} ${student.last_name}`, result.student_id, 'overview', 'results') : 'Student unavailable',
         unit ? `${unit.code} — ${unit.name}` : '—', `${relation(semester?.academic_years)?.name || ''} ${semester?.name || ''}`.trim() || '—',
-        result.cat_score ?? '—', result.exam_score ?? '—', result.total_score ?? '—', result.grade || '—', result.status, actionButton('Manage', result.id),
+        result.cat_score ?? '—', result.exam_score ?? '—', result.total_score ?? '—', result.grade || '—', result.status, (isAdministrator() || result.entered_by === state.user.id) ? actionButton('Manage', result.id) : '—',
       ]);
     });
     setText('results-message', data?.length ? 'Select Manage to update a result workflow.' : 'No results entered yet.');

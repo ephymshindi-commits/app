@@ -1,5 +1,5 @@
 import {
-  state, closeDialog, friendlyDbError, openDialog, requireAdministrator,
+  state, closeDialog, friendlyDbError, isAdministrator, openDialog, requireAdministrator,
   setButtonBusy, setFormMessage, setText, showToast,
 } from './core.js';
 
@@ -45,18 +45,18 @@ function courseCard(course) {
   const status = document.createElement('span');
   status.className = `status ${course.visibility === 'published' ? 'active' : 'pending'}`;
   status.textContent = course.visibility;
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'outline-button';
-  button.dataset.courseAction = 'enrol';
-  button.dataset.courseId = course.id;
-  button.textContent = 'Manage enrolment';
-  card.append(heading, detail, status, button);
+  card.append(heading, detail, status);
+  if (isAdministrator()) {
+    const button = document.createElement('button');
+    button.type = 'button'; button.className = 'outline-button';
+    button.dataset.courseAction = 'enrol'; button.dataset.courseId = course.id;
+    button.textContent = 'Manage enrolment'; card.append(button);
+  }
   return card;
 }
 
 export async function loadCourses() {
-  if (!requireAdministrator()) return;
+  if (!['administrator', 'trainer'].includes(state.role)) return;
   const grid = document.querySelector('#course-grid');
   grid.replaceChildren();
   setText('courses-message', 'Loading course spaces…');
