@@ -1,6 +1,6 @@
 import { formatKes } from './core.js';
 
-const logoUrl = 'https://res.cloudinary.com/ywbvk3ek/image/upload/f_auto,q_auto/love_truth';
+const logoUrl = new URL('../assets/school-logo.png', import.meta.url).href;
 
 function escapeHtml(value = '') {
   return String(value).replace(/[&<>'"]/g, (character) => ({
