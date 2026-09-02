@@ -153,7 +153,7 @@ async function submitProgramme(event) {
   setButtonBusy(button, true, 'Saving…', 'Save programme');
   try {
     const { error } = await state.client.from('programmes').insert({
-      name: document.querySelector('#programme-name').value.trim(), code: document.querySelector('#programme-code').value.trim(),
+      name: document.querySelector('#programme-name').value.trim(), code: document.querySelector('#programme-code').value.trim().toUpperCase(),
       department_id: document.querySelector('#programme-department').value, duration_years: Number(document.querySelector('#programme-duration').value), active: true,
     });
     if (error) throw error;

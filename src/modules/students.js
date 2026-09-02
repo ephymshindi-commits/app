@@ -49,7 +49,7 @@ function drawStudents(rows) {
     const programme = Array.isArray(student.programmes) ? student.programmes[0] : student.programmes;
     appendTableRow('student-table', [
       name,
-      student.registration_number,
+      student.registration_number || 'Awaiting account creation',
       programme?.name || '—',
       student.phone || student.personal_email || '—',
       new Date(`${student.admitted_at}T00:00:00`).toLocaleDateString(),
@@ -82,12 +82,13 @@ export async function loadStudents(query = '') {
 }
 
 async function openStudentLogin(studentId) {
-  const { data: student, error } = await state.client.from('students').select('id, first_name, last_name, registration_number, personal_email, profile_id').eq('id', studentId).maybeSingle();
+  const { data: student, error } = await state.client.from('students').select('id, first_name, last_name, registration_number, personal_email, profile_id, programmes(name, code)').eq('id', studentId).maybeSingle();
   if (error || !student) return showToast('Unable to open that student account.');
   if (student.profile_id) return showToast('This student already has a login account.');
   document.querySelector('#student-login-form').reset();
   document.querySelector('#student-login-id').value = student.id;
-  setText('student-login-name', `${student.first_name} ${student.last_name} · ${student.registration_number}`);
+  const programme = Array.isArray(student.programmes) ? student.programmes[0] : student.programmes;
+  setText('student-login-name', `${student.first_name} ${student.last_name} · ${programme?.code || 'Programme code pending'} · Registration number will be issued when this account is created.`);
   document.querySelector('#student-login-email').value = student.personal_email || '';
   setFormMessage('student-login-form-message'); openDialog('student-login-modal');
 }
@@ -112,6 +113,7 @@ function resetStudentForm() {
   document.querySelector('#student-form').reset();
   setText('student-modal-title', 'Register a student');
   setText('save-student', 'Save student');
+  setText('student-registration-preview', 'Issued automatically after the student login account is created.');
   setFormMessage('student-form-message');
 }
 
@@ -126,12 +128,13 @@ export async function openStudentForm(student = null) {
     setText('save-student', 'Save changes');
     const fields = {
       '#student-first-name': student.first_name, '#student-last-name': student.last_name,
-      '#student-registration-number': student.registration_number, '#student-programme': student.programme_id,
+      '#student-programme': student.programme_id,
       '#student-email': student.personal_email || '', '#student-phone': student.phone || '',
       '#student-nok-name': student.next_of_kin_name || '', '#student-nok-relationship': student.next_of_kin_relationship || '',
       '#student-nok-phone': student.next_of_kin_phone || '', '#student-status': student.status,
     };
     Object.entries(fields).forEach(([selector, value]) => { document.querySelector(selector).value = value; });
+    setText('student-registration-preview', student.registration_number || 'Issued automatically when the student login is created.');
   }
   openDialog('student-modal');
 }
@@ -145,7 +148,6 @@ async function submitStudent(event) {
   const payload = {
     first_name: document.querySelector('#student-first-name').value.trim(),
     last_name: document.querySelector('#student-last-name').value.trim(),
-    registration_number: document.querySelector('#student-registration-number').value.trim(),
     programme_id: document.querySelector('#student-programme').value,
     personal_email: document.querySelector('#student-email').value.trim() || null,
     phone: document.querySelector('#student-phone').value.trim() || null,
