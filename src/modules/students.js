@@ -1,5 +1,5 @@
 import {
-  state, appendTableRow, clearTable, closeDialog, friendlyDbError, initials,
+  state, appendTableRow, clearTable, closeDialog, friendlyDbError, friendlyFunctionError, initials,
   openDialog, requireAdministrator, setButtonBusy, setFormMessage, setText, showToast,
 } from './core.js';
 import { createStudentProfileLink } from './student-profile.js';
@@ -104,7 +104,7 @@ async function createStudentLogin(event) {
     document.querySelector('#student-login-details').textContent = `Student: ${data.account.fullName}\nRegistration number: ${data.account.registrationNumber}\nEmail: ${data.account.email}\nTemporary password: ${password}`;
     openDialog('student-login-details-modal'); showToast('Student login created. Give the details to the student securely.');
     await loadStudents(document.querySelector('#student-search').value);
-  } catch (error) { setFormMessage('student-login-form-message', error?.message || 'Could not create the student login.'); }
+  } catch (error) { setFormMessage('student-login-form-message', await friendlyFunctionError(error, 'Could not create the student login.')); }
   finally { setButtonBusy(button, false, '', 'Create login'); }
 }
 

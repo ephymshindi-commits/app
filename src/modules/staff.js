@@ -1,5 +1,5 @@
 import {
-  state, appendTableRow, clearTable, closeDialog, friendlyDbError, openDialog,
+  state, appendTableRow, clearTable, closeDialog, friendlyDbError, friendlyFunctionError, openDialog,
   requireAdministrator, setButtonBusy, setFormMessage, setText, showToast,
 } from './core.js';
 
@@ -80,7 +80,7 @@ async function submitWorker(event) {
     showToast('Worker account created and invitation sent.');
     await loadWorkers();
   } catch (error) {
-    setFormMessage('worker-form-message', error?.message || 'Could not provision this worker. Confirm the Edge Function is deployed.');
+    setFormMessage('worker-form-message', await friendlyFunctionError(error, 'Could not provision this worker.'));
   } finally {
     setButtonBusy(button, false, '', 'Invite worker');
   }

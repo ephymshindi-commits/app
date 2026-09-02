@@ -43,6 +43,16 @@ export function friendlyDbError(error, fallback = 'Something went wrong. Please 
   }
 }
 
+export async function friendlyFunctionError(error, fallback = 'The secure school service could not complete that request.') {
+  try {
+    const response = error?.context;
+    const body = response?.clone ? await response.clone().json() : null;
+    if (typeof body?.error === 'string' && body.error.trim()) return body.error;
+  } catch {}
+  const message = error?.message?.trim();
+  return message && !/non-2xx status code/i.test(message) ? message : fallback;
+}
+
 export function initials(name = '') {
   return name.split(' ').filter(Boolean).map((part) => part[0]).join('').slice(0, 2).toUpperCase() || '--';
 }

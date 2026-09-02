@@ -1,5 +1,5 @@
 import {
-  state, appendTableRow, clearTable, closeDialog, formatKes, friendlyDbError, openDialog,
+  state, appendTableRow, clearTable, closeDialog, formatKes, friendlyDbError, friendlyFunctionError, openDialog,
   requireAdministrator, setButtonBusy, setFormMessage, setText, showToast,
 } from './core.js';
 import { createStudentProfileLink } from './student-profile.js';
@@ -181,7 +181,7 @@ async function requestMpesaStk(event) {
     const { data, error } = await state.client.functions.invoke('mpesa-stk', { body: { invoiceId: document.querySelector('#mpesa-invoice').value, amount: Number(document.querySelector('#mpesa-amount').value), phone: document.querySelector('#mpesa-phone').value.trim() } });
     if (error || data?.error) throw error || new Error(data.error);
     closeDialog('mpesa-stk-modal'); showToast(data.message || 'M-Pesa prompt sent.');
-  } catch (error) { setFormMessage('mpesa-stk-form-message', error?.message || 'Could not send the M-Pesa prompt.'); }
+  } catch (error) { setFormMessage('mpesa-stk-form-message', await friendlyFunctionError(error, 'Could not send the M-Pesa prompt.')); }
   finally { setButtonBusy(button, false, '', 'Send M-Pesa prompt'); }
 }
 

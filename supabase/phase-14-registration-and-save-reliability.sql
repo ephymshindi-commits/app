@@ -58,8 +58,8 @@ begin
     raise exception 'Student record was not found or already has an account.';
   end if;
 
-  if programme_code !~ '^[A-Z0-9]+$' then
-    raise exception 'The programme code must contain only letters and numbers before a student account can be created.';
+  if programme_code !~ '^[A-Z0-9]+(-[A-Z0-9]+)*$' then
+    raise exception 'The programme code must use letters, numbers and optional single hyphens before a student account can be created.';
   end if;
 
   insert into public.student_registration_counters (programme_id, registration_year, last_issued)
