@@ -40,15 +40,12 @@ async function loadFallbackSummary() {
     state.client.from('unit_results').select('status').limit(1000),
     state.client.from('student_attendance_summary').select('attendance_percentage').limit(1000),
   ]);
-  [studentsResult, invoicesResult, paymentsResult, attendanceResult, resultsResult].forEach((result) => {
-    if (result.error) throw result.error;
-  });
   return summarizeRows({
     activeStudents: studentsResult.count || 0,
-    invoices: invoicesResult.data,
-    payments: paymentsResult.data,
-    attendanceRecords: attendanceResult.data,
-    results: resultsResult.data,
+    invoices: invoicesResult.error ? [] : invoicesResult.data,
+    payments: paymentsResult.error ? [] : paymentsResult.data,
+    attendanceRecords: attendanceResult.error ? [] : attendanceResult.data,
+    results: resultsResult.error ? [] : resultsResult.data,
     attendanceRows: attendanceRowsResult.error ? [] : attendanceRowsResult.data,
   });
 }
