@@ -51,6 +51,35 @@
   overflow: hidden;
 }
 
+@media (min-width: 801px) {
+  .auth-screen {
+    gap: 18px;
+    padding: 18px;
+    background: #f2f5f9;
+    grid-template-columns: minmax(390px, .88fr) 1.12fr;
+  }
+
+  .auth-panel {
+    width: auto;
+    min-height: calc(100vh - 36px);
+    margin: 0;
+    padding: clamp(52px, 6vw, 92px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 12px 34px #10285b0d;
+  }
+
+  .auth-panel > * { max-width: 430px; }
+
+  .auth-aside {
+    min-height: calc(100vh - 36px);
+    border-radius: 24px;
+  }
+}
+
 .institution {
   line-height: 1.45;
 }

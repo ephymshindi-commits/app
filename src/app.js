@@ -6,6 +6,7 @@ import { loadDashboard } from './modules/dashboard.js';
 import { initStudents, loadStudents } from './modules/students.js';
 import { initStaff, loadWorkers } from './modules/staff.js';
 import { initFinance, loadFinance } from './modules/finance.js';
+import { initInventory, loadInventory } from './modules/inventory.js';
 import { initCourses, loadCourses } from './modules/courses.js';
 import { initStudentProfile, openStudentProfile } from './modules/student-profile.js';
 import { initAcademics, loadAcademics } from './modules/academics.js';
@@ -32,6 +33,7 @@ const viewLoaders = {
   workers: loadWorkers,
   academics: loadAcademics,
   finance: loadFinance,
+  inventory: loadInventory,
   attendance: loadAttendance,
   results: loadResults,
   learning: loadCourses,
@@ -194,6 +196,7 @@ loginForm.addEventListener('submit', handleSignIn);
 initStudents();
 initStaff();
 initFinance();
+initInventory();
 initCourses();
 initStudentProfile();
 initAcademics();
