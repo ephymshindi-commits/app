@@ -1,5 +1,3 @@
--- Phase 7: institution communications
--- Apply after phase-6-operations-workflows.sql.
 
 create table if not exists public.announcements (
   id uuid primary key default gen_random_uuid(),

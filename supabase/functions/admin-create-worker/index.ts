@@ -37,7 +37,6 @@ Deno.serve(async (request) => {
   const publishableKey = readPlatformKey('SUPABASE_PUBLISHABLE_KEYS', 'SUPABASE_ANON_KEY');
   const serviceRoleKey = readPlatformKey('SUPABASE_SECRET_KEYS', 'SUPABASE_SERVICE_ROLE_KEY');
   if (!supabaseUrl || !publishableKey || !serviceRoleKey) {
-    console.error('Required Supabase function environment variables are missing.');
     return response({ error: 'Worker provisioning is not configured.' }, 500);
   }
 
@@ -87,7 +86,6 @@ Deno.serve(async (request) => {
     data: { full_name: fullName },
   });
   if (inviteError || !invitation.user) {
-    console.error(inviteError);
     return response({ error: 'Could not create the worker account. The email may already be in use.' }, 409);
   }
 
@@ -110,7 +108,6 @@ Deno.serve(async (request) => {
 
     return response({ worker: staffMember }, 201);
   } catch (error) {
-    console.error(error);
     await adminClient.auth.admin.deleteUser(invitation.user.id);
     return response({ error: 'Worker account could not be finalised. No account was kept.' }, 500);
   }

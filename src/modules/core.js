@@ -34,7 +34,6 @@ export function requireAdministrator(message = 'Only administrators can perform 
 }
 
 export function friendlyDbError(error, fallback = 'Something went wrong. Please try again.') {
-  console.error(error);
   switch (error?.code) {
     case '23505': return 'That value is already in use.';
     case '23503': return 'That linked record no longer exists. Refresh and try again.';
@@ -137,7 +136,6 @@ export async function loadProfile(user) {
     if (error) throw error;
     if (data) profile = data;
   } catch (error) {
-    console.error(error);
     showToast('Your profile could not be loaded. Restricted access is active.');
   }
   state.role = profile.role;

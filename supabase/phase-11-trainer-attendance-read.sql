@@ -1,5 +1,3 @@
--- Trainers may review attendance for their assigned units, including sessions
--- created by an administrator, but can still only write registers they started.
 drop policy if exists "attendance records: trainers read own sessions" on public.attendance_records;
 drop policy if exists "attendance records: trainers read assigned units" on public.attendance_records;
 create policy "attendance records: trainers read assigned units" on public.attendance_records

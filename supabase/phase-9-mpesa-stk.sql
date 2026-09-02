@@ -1,5 +1,3 @@
--- TVET Connect — Phase 9: M-Pesa STK request tracking
--- Run after phase-8-institution-settings.sql.
 
 create table public.mpesa_stk_requests (
   id uuid primary key default gen_random_uuid(),

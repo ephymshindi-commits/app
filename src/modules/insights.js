@@ -1,5 +1,6 @@
 import { appendTableRow, clearTable, formatKes, friendlyDbError, isAdministrator, setText, state } from './core.js';
 import { createStudentProfileLink } from './student-profile.js';
+import { loadOperationalSummary } from './operational-summary.js';
 
 function relation(record) { return Array.isArray(record) ? record[0] : record; }
 
@@ -46,12 +47,12 @@ export async function loadReports() {
   if (!isAdministrator()) return;
   try {
     const [summaryResult, studentsResult, resultsResult] = await Promise.all([
-      state.client.from('institution_operational_summary').select('*').single(),
+      loadOperationalSummary(),
       state.client.from('students').select('id, programme_id, status, programmes(name, code)').eq('status', 'active'),
       state.client.from('unit_results').select('id', { count: 'exact', head: true }).eq('status', 'released'),
     ]);
-    [summaryResult, studentsResult, resultsResult].forEach((result) => { if (result.error) throw result.error; });
-    const summary = summaryResult.data || {};
+    [studentsResult, resultsResult].forEach((result) => { if (result.error) throw result.error; });
+    const summary = summaryResult || {};
     setText('report-active-students', summary.active_students || 0);
     setText('report-fees-collected', formatKes(summary.total_collected));
     setText('report-fees-note', `${formatKes(summary.total_outstanding)} outstanding`);
@@ -68,7 +69,6 @@ export async function loadReports() {
     appendTableRow('report-finance-table', ['Payments collected', formatKes(summary.total_collected)]);
     appendTableRow('report-finance-table', ['Outstanding balance', formatKes(summary.total_outstanding)]);
   } catch (error) {
-    console.error(error);
     setText('report-active-students', '—'); setText('report-fees-collected', '—'); setText('report-released-results', '—');
   }
 }

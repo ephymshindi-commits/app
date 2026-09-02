@@ -126,7 +126,6 @@ async function handleSignIn(event) {
     });
     if (error) showAuthMessage(error.message);
   } catch (error) {
-    console.error(error);
     showAuthMessage('Could not reach the sign-in service. Check your connection and try again.');
   } finally {
     button.disabled = false;
@@ -144,7 +143,6 @@ async function handlePasswordReset() {
     if (error) throw error;
     showAuthMessage('If this address has an account, a reset link is on its way.', 'success');
   } catch (error) {
-    console.error(error);
     showAuthMessage('Could not send a reset link. Check the email address and try again.');
   }
 }
@@ -167,7 +165,6 @@ function initSharedInteractions() {
       if (error) throw error;
       showAuthMessage('You have signed out.', 'success');
     } catch (error) {
-      console.error(error);
       showToast('Could not sign out. Check your connection and try again.');
     }
   });
@@ -187,7 +184,6 @@ async function initializeAuth() {
     await renderSession(session);
     state.client.auth.onAuthStateChange((_event, nextSession) => window.setTimeout(() => renderSession(nextSession), 0));
   } catch (error) {
-    console.error(error);
     showAuthMessage('Could not restore your session. Reload the page and try again.');
   }
 }

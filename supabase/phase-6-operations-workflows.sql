@@ -1,15 +1,5 @@
--- ============================================================================
--- TVET Connect — Phase 6: Staff, Finance and Course Operations
--- ============================================================================
--- Run after phase-5-operational-readiness.sql.
--- This migration supports the operational browser modules and preserves the
--- rule that only a server-side function may create or invite user accounts.
--- ============================================================================
 
 
--- ----------------------------------------------------------------------------
--- 1. STAFF / WORKERS
--- ----------------------------------------------------------------------------
 create type public.staff_employment_status as enum ('active', 'on_leave', 'inactive');
 
 create table public.staff_members (
@@ -47,10 +37,6 @@ create trigger audit_staff_members
   after insert or update or delete on public.staff_members
   for each row execute function public.record_audit_log();
 
--- The existing students table requires archived_at to be populated exactly
--- when a record becomes archived. The operational registration/edit form
--- exposes status, so enforce that invariant centrally instead of relying on
--- every future client to remember it.
 create or replace function public.sync_student_archive_timestamp()
 returns trigger
 language plpgsql
@@ -72,12 +58,6 @@ create trigger students_sync_archive_timestamp
   for each row execute function public.sync_student_archive_timestamp();
 
 
--- ----------------------------------------------------------------------------
--- 2. FINANCIAL INTEGRITY AND AUTOMATIC INVOICE STATUS
--- ----------------------------------------------------------------------------
--- Linked payments may not exceed the invoice total. Unallocated payments are
--- still permitted for controlled reconciliation, but the operational form
--- always links a payment to an invoice.
 create or replace function public.enforce_invoice_payment_total()
 returns trigger
 language plpgsql
@@ -156,13 +136,3 @@ create trigger payments_sync_invoice_status
 create index invoices_open_student_idx
   on public.invoices(student_id, status, due_on)
   where status in ('issued', 'part_paid');
-
-
--- ----------------------------------------------------------------------------
--- 3. VERIFY
--- ----------------------------------------------------------------------------
--- As an administrator, create an invoice for KES 10,000 and insert a KES
--- 4,000 payment: invoice status becomes part_paid. Insert a further KES
--- 6,000 payment: status becomes paid. A further linked payment must fail.
--- Confirm that only administrators can list or modify staff_members.
--- ============================================================================

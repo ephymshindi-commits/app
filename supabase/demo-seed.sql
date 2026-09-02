@@ -1,8 +1,4 @@
--- Manager demonstration data for TVET Connect.
--- Apply only to a new/demo environment. Safe to re-run: all records use
--- stable natural keys and upserts where the schema permits them.
 
--- Staff profiles correspond to Supabase Auth accounts created for the demo.
 insert into public.profiles (id, full_name, email, role)
 select id, 'School Administrator', email, 'administrator'::public.app_role
 from auth.users where email = 'admin@tvetconnect.school'

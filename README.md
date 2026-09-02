@@ -74,7 +74,6 @@ Not needed yet:
 
 - The migration assumes `schema.sql` is already applied; it is deliberately additive and does not rewrite historical MVP data.
 - `phase-2-digital-campus.sql` includes database RLS for the new module tables. Test every policy with administrator, trainer and student accounts before relying on it in production.
-- Timetable conflict policy is marked as a TODO because the institution must first decide whether groups may share rooms/trainers and which situations constitute an allowed overlap.
 - Establish formal workflows for assessment publication, marking, result release, late submissions, file retention and student-support escalation before enabling them for users.
 
 ## Current sign-in behavior

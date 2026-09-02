@@ -3,6 +3,7 @@ import {
   requireAdministrator, setButtonBusy, setFormMessage, setText, showToast,
 } from './core.js';
 import { createStudentProfileLink } from './student-profile.js';
+import { loadOperationalSummary } from './operational-summary.js';
 
 let openInvoices = new Map();
 let recentPayments = new Map();
@@ -76,7 +77,7 @@ export async function loadFinance() {
   setText('finance-message', 'Loading financial records…');
   try {
     const [summaryResult, invoicesResult, paymentsResult] = await Promise.all([
-      state.client.from('institution_operational_summary').select('*').single(),
+      loadOperationalSummary(),
       state.client.from('invoices')
         .select('id, invoice_number, amount, due_on, status, students(id, registration_number, first_name, last_name)')
         .order('created_at', { ascending: false }).limit(50),
@@ -84,10 +85,9 @@ export async function loadFinance() {
         .select('id, receipt_number, amount, method, reference, received_at, students(id, registration_number, first_name, last_name, personal_email), invoices(invoice_number)')
         .order('received_at', { ascending: false }).limit(50),
     ]);
-    if (summaryResult.error) throw summaryResult.error;
     if (invoicesResult.error) throw invoicesResult.error;
     if (paymentsResult.error) throw paymentsResult.error;
-    const summary = summaryResult.data || {};
+    const summary = summaryResult || {};
     setText('finance-invoiced', formatKes(summary.total_invoiced));
     setText('finance-collected', formatKes(summary.total_collected));
     const rate = Number(summary.total_invoiced || 0)

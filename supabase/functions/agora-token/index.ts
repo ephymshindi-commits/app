@@ -51,7 +51,6 @@ Deno.serve(async (request) => {
   const { data: identity, error: identityError } = await caller.auth.getUser();
   if (identityError || !identity.user) return response({ error: 'Your session is no longer valid.' }, 401);
 
-  // This read is performed as the caller, so the virtual_sessions RLS policy verifies course access.
   const { data: session, error: sessionError } = await caller
     .from('virtual_sessions')
     .select('id, title, meeting_url, starts_at, ends_at')
@@ -68,8 +67,6 @@ Deno.serve(async (request) => {
   if (!channelName) return response({ error: 'This live class has an invalid room configuration.' }, 422);
 
   const { data: profile } = await caller.from('profiles').select('role').eq('id', identity.user.id).maybeSingle();
-  // Every verified course member can choose to share camera and sound. The room is
-  // still protected by the caller-scoped session read above, not by a browser secret.
   const isPresenter = profile?.role === 'administrator' || profile?.role === 'trainer';
   const uid = crypto.getRandomValues(new Uint32Array(1))[0] || 1;
   const expiresAt = Math.floor(Date.now() / 1000) + 60 * 60;

@@ -165,7 +165,6 @@ export async function openStudentProfile(studentId, tab = 'overview', source = '
     profileState.payments = paymentsResult.data || [];
     renderProfile();
   } catch (error) {
-    console.error(error);
     setText('student-profile-name', 'Student profile unavailable');
     setText('student-profile-subtitle', friendlyDbError(error, 'Unable to retrieve this student record.'));
     showToast(friendlyDbError(error, 'Unable to retrieve this student record.'));

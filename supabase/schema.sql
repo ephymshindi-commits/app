@@ -1,5 +1,3 @@
--- TVET Connect MVP database foundation for Supabase PostgreSQL.
--- Apply this in the Supabase SQL editor, then tailor RLS policies to institution workflows.
 create extension if not exists "pgcrypto";
 
 create type public.app_role as enum ('administrator', 'trainer', 'student');
@@ -41,7 +39,5 @@ alter table public.invoices enable row level security;
 alter table public.payments enable row level security;
 alter table public.attendance_records enable row level security;
 
--- MVP baseline: each authenticated user can read their own profile; administrators need
--- explicit policies per table after roles and institutional approval workflows are finalised.
 create policy "profiles: users read self" on public.profiles for select to authenticated using (id = auth.uid());
 create policy "profiles: users update self" on public.profiles for update to authenticated using (id = auth.uid()) with check (id = auth.uid());

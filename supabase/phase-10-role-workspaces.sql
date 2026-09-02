@@ -1,5 +1,3 @@
--- Phase 10: separate administrator, trainer and student workspaces.
--- This is deliberately enforced by RLS as well as by the visible navigation.
 
 create or replace function public.trainer_manages_course_student(target_student_id uuid, target_unit_id uuid)
 returns boolean
@@ -15,7 +13,6 @@ as $$
   )
 $$;
 
--- Trainers see only students enrolled in a course they teach.
 create policy "students: trainers read assigned course members" on public.students
   for select to authenticated
   using (
@@ -26,8 +23,6 @@ create policy "students: trainers read assigned course members" on public.studen
     )
   );
 
--- Trainers can see all results for their assigned students and unit, while
--- retaining edit rights only for draft results they entered themselves.
 drop policy if exists "unit results: trainers read own entries" on public.unit_results;
 drop policy if exists "unit results: trainers create own drafts" on public.unit_results;
 drop policy if exists "unit results: trainers update own drafts" on public.unit_results;
@@ -46,7 +41,6 @@ create policy "unit results: trainers delete own assigned drafts" on public.unit
   for delete to authenticated
   using (public.is_trainer() and entered_by = auth.uid() and status = 'draft' and public.trainer_manages_course_student(student_id, unit_id));
 
--- Trainers take and view attendance only for their own units.
 create policy "attendance sessions: trainers read own units" on public.attendance_sessions
   for select to authenticated
   using (public.is_trainer() and exists (select 1 from public.learning_courses c where c.trainer_id = auth.uid() and c.unit_id = attendance_sessions.unit_id));
@@ -64,7 +58,6 @@ create policy "attendance records: trainers create own sessions" on public.atten
   for insert to authenticated
   with check (public.is_trainer() and exists (select 1 from public.attendance_sessions s where s.id = attendance_records.session_id and s.recorded_by = auth.uid()));
 
--- The timetable is scoped to the lecturer or the student's programme.
 drop policy if exists "timetable: authenticated readers" on public.timetable_slots;
 create policy "timetable: administrators read" on public.timetable_slots for select to authenticated using (public.is_administrator());
 create policy "timetable: trainers read own" on public.timetable_slots for select to authenticated using (public.is_trainer() and trainer_id = auth.uid());
@@ -72,12 +65,9 @@ create policy "timetable: students read programme" on public.timetable_slots for
   programme_id in (select programme_id from public.students where profile_id = auth.uid())
 );
 
--- Students have no finance workspace in this portal; finance stays an
--- administrator-only responsibility.
 drop policy if exists "invoices: students read own" on public.invoices;
 drop policy if exists "payments: students read own" on public.payments;
 
--- Published notices are directed to the correct audience.
 drop policy if exists "announcements: authenticated read published" on public.announcements;
 create policy "announcements: audience read published" on public.announcements
   for select to authenticated

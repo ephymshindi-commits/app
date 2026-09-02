@@ -1,4 +1,3 @@
- --Digital Academic Campus
 
 
 create type public.course_visibility as enum ('draft', 'published', 'archived');
@@ -9,8 +8,6 @@ create type public.question_kind as enum ('multiple_choice', 'true_false', 'shor
 create type public.attempt_status as enum ('in_progress', 'submitted', 'graded', 'expired');
 create type public.risk_level as enum ('watch', 'high', 'critical', 'resolved');
 
--- A secure, reusable authorization layer. The functions run as the database
--- owner so RLS rules can safely answer role and membership checks.
 create or replace function public.current_app_role()
 returns public.app_role
 language sql
@@ -276,8 +273,6 @@ create index online_assessments_course_window_idx on public.online_assessments(c
 create index timetable_slots_trainer_idx on public.timetable_slots(trainer_id, semester_id, day_of_week);
 create index student_risk_alerts_open_idx on public.student_risk_alerts(student_id, level) where resolved_at is null;
 
--- TODO: Create a private Supabase Storage bucket named `learning-content`.
--- Store only object paths in storage_path. Do not persist signed URLs in tables.
 alter table public.learning_courses enable row level security;
 alter table public.course_memberships enable row level security;
 alter table public.course_materials enable row level security;
@@ -342,5 +337,3 @@ as $$ begin new.updated_at = now(); return new; end; $$;
 
 create trigger learning_courses_updated_at before update on public.learning_courses for each row execute function public.set_updated_at();
 create trigger assignments_updated_at before update on public.assignments for each row execute function public.set_updated_at();
-
-

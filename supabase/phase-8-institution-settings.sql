@@ -1,6 +1,3 @@
--- Phase 8: editable institution settings.
--- Agora App Certificates must remain in a Supabase Edge Function secret,
--- never in this table or any browser-visible configuration.
 
 create table if not exists public.institution_settings (
   id boolean primary key default true check (id),

@@ -1,5 +1,3 @@
--- Phase 12: administrator-only school inventory and asset control.
--- Run after phase-11-trainer-attendance-read.sql.
 
 create table public.inventory_categories (
   id uuid primary key default gen_random_uuid(),

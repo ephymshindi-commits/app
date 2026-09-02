@@ -1,25 +1,5 @@
--- ============================================================================
--- TVET Connect — Phase 5: Operational Readiness
--- ============================================================================
--- Prerequisite: run after schema.sql, phase-2-digital-campus.sql,
--- phase-1-admin-rls.sql, phase-3-security-hardening.sql and
--- phase-4-mvp-gap-fill.sql.
---
--- This migration makes the live operational dashboard possible without
--- exposing student, finance or assessment data through a browser aggregate.
--- It also closes attendance_sessions, which was unintentionally left outside
--- Row Level Security in the earlier migrations.
--- ============================================================================
 
 
--- ----------------------------------------------------------------------------
--- 1. ATTENDANCE SESSIONS: CLOSE THE MISSED RLS GAP
--- ----------------------------------------------------------------------------
--- attendance_records was protected, but its parent session table was never
--- enabled for RLS. Because Supabase exposes public tables through PostgREST,
--- this could disclose session dates, unit IDs and staff IDs to anonymous or
--- unauthorised callers. Students can now read only sessions for which they
--- have their own attendance record; administrators retain full control.
 alter table public.attendance_sessions enable row level security;
 
 drop policy if exists "attendance sessions: administrators manage" on public.attendance_sessions;
@@ -40,8 +20,6 @@ create policy "attendance sessions: students read own" on public.attendance_sess
     )
   );
 
--- Attendance changes can materially affect progression and student-support
--- decisions, so record both session and individual register edits.
 drop trigger if exists audit_attendance_sessions on public.attendance_sessions;
 create trigger audit_attendance_sessions
   after insert or update or delete on public.attendance_sessions
@@ -53,14 +31,6 @@ create trigger audit_attendance_records
   for each row execute function public.record_audit_log();
 
 
--- ----------------------------------------------------------------------------
--- 2. RESULT STATUS TRANSITIONS: MAKE THE APPROVAL WORKFLOW REAL
--- ----------------------------------------------------------------------------
--- Phase 4 correctly prevented trainers from self-approving a mark, but the
--- draft-only RLS update policy also prevented a trainer from submitting their
--- own draft. Use one narrowly-scoped SECURITY DEFINER function for that
--- transition, while a trigger prevents anyone (including an administrator)
--- from skipping or editing past the approved workflow.
 alter table public.unit_results
   add column if not exists submitted_at timestamptz;
 
@@ -81,9 +51,6 @@ begin
     return new;
   end if;
 
-  -- Once a trainer submits a mark, a correction must be a documented
-  -- administrative workflow; silently editing approved/released marks would
-  -- weaken the audit trail and can change a student's official result.
   if old.status <> 'draft'
      and (new.cat_score, new.exam_score, new.grade, new.student_id, new.unit_id, new.semester_id)
          is distinct from (old.cat_score, old.exam_score, old.grade, old.student_id, old.unit_id, old.semester_id) then
@@ -150,12 +117,6 @@ revoke all on function public.submit_my_unit_result(uuid) from public;
 grant execute on function public.submit_my_unit_result(uuid) to authenticated;
 
 
--- ----------------------------------------------------------------------------
--- 3. SINGLE-ROW, RLS-AWARE INSTITUTIONAL SUMMARY
--- ----------------------------------------------------------------------------
--- The application reads this view rather than downloading every invoice,
--- payment and attendance record simply to calculate four tiles. The view is
--- explicitly security_invoker, so it never bypasses the caller's RLS rights.
 create or replace view public.institution_operational_summary as
 select
   (select count(*) from public.students where status = 'active')::bigint as active_students,
@@ -176,23 +137,3 @@ select
   (select count(*) from public.student_attendance_summary where attendance_percentage < 75)::bigint as low_attendance_students;
 
 alter view public.institution_operational_summary set (security_invoker = true);
-
-
--- ----------------------------------------------------------------------------
--- VERIFY AFTER APPLYING
--- ----------------------------------------------------------------------------
--- 1. Confirm attendance_sessions is now protected:
---    select relname, relrowsecurity from pg_class
---    where relnamespace = 'public'::regnamespace
---      and relname = 'attendance_sessions';
---    -- expected: true
---
--- 2. As an authenticated administrator:
---    select * from public.institution_operational_summary;
---    -- expected: exactly one row of live institutional totals
---
--- 3. As a trainer: insert a draft unit_results row you own, then run:
---    select * from public.submit_my_unit_result('<result-id>');
---    -- expected: status moves from draft to submitted; a subsequent direct
---    -- UPDATE by that trainer remains rejected by RLS.
--- ============================================================================

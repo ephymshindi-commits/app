@@ -80,7 +80,6 @@ async function submitWorker(event) {
     showToast('Worker account created and invitation sent.');
     await loadWorkers();
   } catch (error) {
-    console.error(error);
     setFormMessage('worker-form-message', error?.message || 'Could not provision this worker. Confirm the Edge Function is deployed.');
   } finally {
     setButtonBusy(button, false, '', 'Invite worker');

@@ -1,4 +1,5 @@
 import { state, formatKes, isAdministrator, setText } from './core.js';
+import { loadOperationalSummary } from './operational-summary.js';
 
 function attentionRow(icon, title, detail, target) {
   const row = document.createElement('div');
@@ -22,9 +23,7 @@ function attentionRow(icon, title, detail, target) {
 export async function loadDashboard() {
   if (!isAdministrator()) return;
   try {
-    const { data, error } = await state.client.from('institution_operational_summary').select('*').single();
-    if (error) throw error;
-    const summary = data || {};
+    const summary = await loadOperationalSummary();
     const activeStudents = Number(summary.active_students || 0);
     const collected = Number(summary.total_collected || 0);
     const invoiced = Number(summary.total_invoiced || 0);
@@ -50,7 +49,6 @@ export async function loadDashboard() {
     if (!items.length) attention.textContent = 'No current operational items need attention.';
     items.forEach((item) => attention.append(attentionRow(...item)));
   } catch (error) {
-    console.error(error);
-    setText('metric-active-students-note', 'Live data unavailable — apply Phase 5.');
+    setText('metric-active-students-note', 'Live data is temporarily unavailable.');
   }
 }

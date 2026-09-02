@@ -1,5 +1,3 @@
- --Phase 1 administrator access policies
- --These policies give only administrators full access
 
 
 drop policy if exists "profiles: users update self" on public.profiles;
