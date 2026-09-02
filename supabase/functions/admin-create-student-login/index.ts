@@ -36,20 +36,21 @@ Deno.serve(async (request) => {
   try {
     const { error: profileError } = await admin
       .from('profiles')
-      .insert({ id: created.user.id, full_name: fullName, email, role: 'student' });
+      .upsert(
+        { id: created.user.id, full_name: fullName, email, role: 'student' },
+        { onConflict: 'id' },
+      );
     if (profileError) throw profileError;
     const { data: registrationNumber, error: registrationError } = await admin.rpc(
       'issue_student_registration_number',
       { target_student_id: student.id, target_profile_id: created.user.id },
     );
     if (registrationError || !registrationNumber) throw registrationError || new Error('Registration number could not be issued.');
-    const { error: metadataError } = await admin.auth.admin.updateUserById(created.user.id, {
-      user_metadata: { full_name: fullName, registration_number: registrationNumber, temporary_password: true },
-    });
-    if (metadataError) throw metadataError;
     return response({ account: { email, registrationNumber, fullName } }, 201);
   } catch (error) {
     await admin.auth.admin.deleteUser(created.user.id);
-    return response({ error: 'Student login could not be finalised. No account was kept.' }, 500);
+    const reason = error instanceof Error && error.message ? ` ${error.message}` : '';
+    console.error('Student login finalisation failed.', error);
+    return response({ error: `Student login could not be finalised.${reason} No account was kept.` }, 500);
   }
 });
