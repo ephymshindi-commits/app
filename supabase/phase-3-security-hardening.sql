@@ -126,12 +126,6 @@ left join (
 ) p on p.student_id = s.id
 group by s.id, s.registration_number, p.total_paid;
 
-comment on view public.student_fee_balances is
-  'Single source of truth for "how much does this student owe". Query this
-   view from every screen that needs the number instead of recomputing it —
-   the finance dashboard, the student self-service view and any report
-   should all read the same balance.';
-
 alter view public.student_fee_balances set (security_invoker = true);
 
 
