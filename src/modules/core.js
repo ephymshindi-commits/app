@@ -3,6 +3,7 @@ export const state = {
   user: null,
   role: '',
   firstName: 'Account user',
+  fullName: 'Account user',
 };
 
 export function configureClient() {
@@ -139,6 +140,7 @@ export async function loadProfile(user) {
     showToast('Your profile could not be loaded. Restricted access is active.');
   }
   state.role = profile.role;
+  state.fullName = profile.full_name || fallbackName;
   state.firstName = profile.full_name.split(' ')[0] || fallbackName;
   setText('user-name', profile.full_name);
   setText('user-role', profile.role.replace('_', ' '));

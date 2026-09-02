@@ -54,7 +54,7 @@ Deno.serve(async (request) => {
   // This read is performed as the caller, so the virtual_sessions RLS policy verifies course access.
   const { data: session, error: sessionError } = await caller
     .from('virtual_sessions')
-    .select('id, meeting_url, starts_at, ends_at')
+    .select('id, title, meeting_url, starts_at, ends_at')
     .eq('id', sessionId)
     .maybeSingle();
   if (sessionError || !session) return response({ error: 'You do not have access to this live class.' }, 403);
@@ -68,7 +68,9 @@ Deno.serve(async (request) => {
   if (!channelName) return response({ error: 'This live class has an invalid room configuration.' }, 422);
 
   const { data: profile } = await caller.from('profiles').select('role').eq('id', identity.user.id).maybeSingle();
-  const canPublish = profile?.role === 'administrator' || profile?.role === 'trainer';
+  // Every verified course member can choose to share camera and sound. The room is
+  // still protected by the caller-scoped session read above, not by a browser secret.
+  const isPresenter = profile?.role === 'administrator' || profile?.role === 'trainer';
   const uid = crypto.getRandomValues(new Uint32Array(1))[0] || 1;
   const expiresAt = Math.floor(Date.now() / 1000) + 60 * 60;
   const token = RtcTokenBuilder.buildTokenWithUid(
@@ -76,8 +78,8 @@ Deno.serve(async (request) => {
     appCertificate,
     channelName,
     uid,
-    canPublish ? RtcRole.PUBLISHER : RtcRole.SUBSCRIBER,
+    RtcRole.PUBLISHER,
     expiresAt,
   );
-  return response({ appId, token, uid, channelName, canPublish, expiresAt });
+  return response({ appId, token, uid, channelName, title: session.title, isPresenter, expiresAt });
 });
