@@ -76,6 +76,20 @@ Not needed yet:
 - `phase-2-digital-campus.sql` includes database RLS for the new module tables. Test every policy with administrator, trainer and student accounts before relying on it in production.
 - Establish formal workflows for assessment publication, marking, result release, late submissions, file retention and student-support escalation before enabling them for users.
 
+## Payments, e-certificates and alumni
+
+The student finance page supports three payment paths:
+
+- **M-Pesa** sends an STK prompt. The payment is added to the student account only after Safaricom's callback confirms the exact amount and transaction reference.
+- **Card** and **Cheque** let students submit their transaction message or cheque number. These are intentionally pending until an administrator approves them in Finance.
+- Finance shows programme-fee totals, confirmed collections, outstanding balance and pending approval value. Pending proofs do not alter balances before approval.
+
+Apply [supabase/phase-19-student-payment-workflow.sql](supabase/phase-19-student-payment-workflow.sql) and [supabase/phase-20-certificates-and-alumni.sql](supabase/phase-20-certificates-and-alumni.sql) after the existing migrations. Deploy [supabase/functions/mpesa-stk/index.ts](supabase/functions/mpesa-stk/index.ts) and [supabase/functions/verify-certificate/index.ts](supabase/functions/verify-certificate/index.ts). The public endpoint is available through the deployed app as `/api/verify-certificate/{hash}` and returns only an active certificate's verification-safe details.
+
+Certificate issuance requires all of the following at the database layer: every programme unit has a released passing result, the active programme fee balance is exactly zero, and an administrator has recorded graduation approval. Issuing a certificate snapshots the covered units, creates the alumni registry entry, and generates a unique hash. An active certificate can later be revoked; revoked hashes never verify publicly.
+
+Required secure M-Pesa Edge Function environment variables are `MPESA_CONSUMER_KEY`, `MPESA_CONSUMER_SECRET`, `MPESA_SHORTCODE`, `MPESA_PASSKEY`, `MPESA_CALLBACK_URL`, and optionally `MPESA_ENV=production`. `MPESA_CALLBACK_URL` must target the deployed `mpesa-callback` Edge Function. Never place these values in browser code. Certificate signatory images are referenced by HTTPS URL; use a private managed storage workflow and time-limited signed URLs if the images are not intended to be public.
+
 ## Current sign-in behavior
 
 The application now opens on a secure sign-in screen. It accepts only accounts created in Supabase Auth. On first sign-in it reads the person’s own `profiles` row to display their name and role; if that profile has not yet been created, it uses the email name as a safe fallback.

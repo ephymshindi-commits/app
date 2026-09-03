@@ -1,6 +1,7 @@
 import { formatKes, friendlyDbError, initials, registrationLabel, requireAdministrator, setText, showToast, state } from './core.js';
+import { renderStudentPaymentSections } from './student-payments.js';
 
-const profileState = { student: null, finance: null, payments: [], activeTab: 'overview', source: 'students' };
+const profileState = { student: null, finance: null, payments: [], submissions: [], mpesaRequests: [], activeTab: 'overview', source: 'students' };
 
 function related(record) {
   return Array.isArray(record) ? record[0] : record;
@@ -75,7 +76,7 @@ function renderFinance(content) {
   content.append(stats);
 
   const paymentPanel = panel('Payment record', 'Receipts recorded against this student account and its programme fee structure.');
-  if (requireAdministrator()) {
+  if (state.role === 'administrator') {
     const payButton = createElement('button', 'primary-button', 'Pay');
     payButton.type = 'button';
     payButton.dataset.studentFinancePay = profileState.student.id;
@@ -92,6 +93,7 @@ function renderFinance(content) {
   paymentWrap.append(paymentTable);
   paymentPanel.append(paymentWrap);
   content.append(paymentPanel);
+  if (state.role === 'student') renderStudentPaymentSections(content, account, profileState.submissions, profileState.mpesaRequests);
 }
 
 function renderContent() {
@@ -148,18 +150,24 @@ export async function openStudentProfile(studentId, tab = 'overview', source = '
       if (ownStudentError || !ownStudent) throw ownStudentError || new Error('Student profile was not found.');
       studentId = ownStudent.id;
     }
-    const [studentResult, financeResult, paymentsResult] = await Promise.all([
+    const [studentResult, financeResult, paymentsResult, submissionsResult, mpesaRequestsResult] = await Promise.all([
       state.client.from('students').select('id, registration_number, first_name, last_name, phone, personal_email, status, admitted_at, next_of_kin_name, next_of_kin_relationship, next_of_kin_phone, programmes(name, code)').eq('id', studentId).maybeSingle(),
-      state.role === 'student' ? Promise.resolve({ data: null, error: null }) : state.client.rpc('student_finance_snapshot', { target_student_id: studentId }).maybeSingle(),
-      state.role === 'student' ? Promise.resolve({ data: [], error: null }) : state.client.from('payments').select('id, receipt_number, amount, method, reference, received_at').eq('student_id', studentId).order('received_at', { ascending: false }),
+      state.role === 'student' ? state.client.rpc('my_student_finance_snapshot').maybeSingle() : state.client.rpc('student_finance_snapshot', { target_student_id: studentId }).maybeSingle(),
+      state.role === 'student' ? state.client.rpc('my_student_payment_history') : state.client.from('payments').select('id, receipt_number, amount, method, reference, received_at').eq('student_id', studentId).order('received_at', { ascending: false }),
+      state.role === 'student' ? state.client.rpc('my_student_payment_submissions') : Promise.resolve({ data: [], error: null }),
+      state.role === 'student' ? state.client.rpc('my_mpesa_payment_requests') : Promise.resolve({ data: [], error: null }),
     ]);
     if (studentResult.error) throw studentResult.error;
     if (!studentResult.data) throw new Error('Student record was not found.');
     if (financeResult.error) throw financeResult.error;
     if (paymentsResult.error) throw paymentsResult.error;
+    if (submissionsResult.error) throw submissionsResult.error;
+    if (mpesaRequestsResult.error) throw mpesaRequestsResult.error;
     profileState.student = studentResult.data;
     profileState.finance = financeResult.data;
     profileState.payments = paymentsResult.data || [];
+    profileState.submissions = submissionsResult.data || [];
+    profileState.mpesaRequests = mpesaRequestsResult.data || [];
     renderProfile();
   } catch (error) {
     setText('student-profile-name', 'Student profile unavailable');
@@ -179,7 +187,6 @@ export function initStudentProfile() {
     } }));
   });
   document.querySelectorAll('[data-profile-tab]').forEach((tab) => tab.addEventListener('click', () => {
-    if (state.role === 'student' && tab.dataset.profileTab === 'finance') return;
     profileState.activeTab = tab.dataset.profileTab;
     renderContent();
   }));
@@ -191,8 +198,9 @@ export function initStudentProfile() {
     if (button) document.dispatchEvent(new CustomEvent('finance:record-payment', { detail: { studentId: button.dataset.studentFinancePay } }));
   });
   document.addEventListener('student-profile:refresh-finance', (event) => {
-    if (profileState.student?.id === event.detail?.studentId && profileState.activeTab === 'finance') {
-      openStudentProfile(event.detail.studentId, 'finance', 'finance');
+    const studentRefresh = state.role === 'student' || profileState.student?.id === event.detail?.studentId;
+    if (studentRefresh && profileState.activeTab === 'finance') {
+      openStudentProfile(state.role === 'student' ? null : event.detail.studentId, 'finance', profileState.source);
     }
   });
 }

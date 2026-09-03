@@ -44,12 +44,56 @@ function payButton(studentId) {
   return button;
 }
 
+function reviewButton(label, submissionId, approve) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = approve ? 'primary-button' : 'outline-button';
+  button.dataset.paymentSubmissionId = submissionId;
+  button.dataset.paymentSubmissionDecision = String(approve);
+  button.textContent = label;
+  return button;
+}
+
+function setFinanceSummary(summary) {
+  setText('finance-total-fee', formatKes(summary?.total_fee));
+  setText('finance-total-collected', formatKes(summary?.total_collected));
+  const balance = Number(summary?.total_balance || 0);
+  setText('finance-total-balance', balance < 0 ? `Credit ${formatKes(Math.abs(balance))}` : formatKes(balance));
+  setText('finance-student-count', `${summary?.active_students || 0} active student account${Number(summary?.active_students || 0) === 1 ? '' : 's'}`);
+  setText('finance-pending-amount', `${summary?.pending_submissions || 0} payment${Number(summary?.pending_submissions || 0) === 1 ? '' : 's'} awaiting approval · ${formatKes(summary?.pending_submission_amount)}`);
+}
+
+function renderPendingSubmissions(submissions) {
+  clearTable('payment-submissions-table');
+  (submissions || []).forEach((submission) => {
+    const student = Array.isArray(submission.students) ? submission.students[0] : submission.students;
+    const actions = document.createElement('div');
+    actions.className = 'button-row';
+    actions.append(reviewButton('Approve', submission.id, true), reviewButton('Reject', submission.id, false));
+    appendTableRow('payment-submissions-table', [
+      createStudentProfileLink(`${student?.first_name || 'Student'} ${student?.last_name || ''}`.trim(), submission.student_id, 'finance', 'finance'),
+      formatKes(submission.amount), submission.method, submission.transaction_details,
+      new Date(submission.submitted_at).toLocaleString(), actions,
+    ]);
+  });
+  setText('payment-submissions-message', submissions?.length ? `${submissions.length} payment submission${submissions.length === 1 ? '' : 's'} require finance approval.` : 'No card or cheque payment submissions are awaiting approval.');
+}
+
 export async function loadFinance() {
   if (!requireAdministrator()) return;
   setText('finance-message', 'Loading student finance accounts…');
   try {
-    const { data, error } = await state.client.rpc('student_finance_accounts');
-    if (error) throw error;
+    const [accountsResult, summaryResult, submissionsResult] = await Promise.all([
+      state.client.rpc('student_finance_accounts'),
+      state.client.rpc('institution_finance_summary').maybeSingle(),
+      state.client.from('student_payment_submissions').select('id, student_id, amount, method, transaction_details, submitted_at, students(first_name, last_name)').eq('status', 'pending').order('submitted_at'),
+    ]);
+    if (accountsResult.error) throw accountsResult.error;
+    if (summaryResult.error) throw summaryResult.error;
+    if (submissionsResult.error) throw submissionsResult.error;
+    const data = accountsResult.data;
+    setFinanceSummary(summaryResult.data);
+    renderPendingSubmissions(submissionsResult.data || []);
     financeAccounts = new Map((data || []).map((account) => [account.student_id, account]));
     clearTable('finance-table');
     (data || []).forEach((account) => appendTableRow('finance-table', [
@@ -59,6 +103,21 @@ export async function loadFinance() {
     ]));
     setText('finance-message', data?.length ? 'Select a student to review their full payment history or record a payment.' : 'No active students are available for finance records.');
   } catch (error) { setText('finance-message', friendlyDbError(error, 'Unable to load student finance accounts.')); }
+}
+
+async function reviewPaymentSubmission(submissionId, approve) {
+  if (!requireAdministrator()) return;
+  try {
+    const { data, error } = await state.client.rpc('approve_student_payment_submission', {
+      target_submission_id: submissionId,
+      approve,
+      decision_note: null,
+    }).single();
+    if (error) throw error;
+    showToast(approve ? `Payment approved. Receipt ${data?.receipt_number || 'created'} is now on the student account.` : 'Payment submission rejected. The student can submit corrected details.');
+    await loadFinance();
+    document.dispatchEvent(new CustomEvent('student-profile:refresh-finance', { detail: { studentId: null } }));
+  } catch (error) { showToast(friendlyDbError(error, 'Could not review this payment submission.')); }
 }
 
 async function openPaymentForm(studentId) {
@@ -113,6 +172,10 @@ export function initFinance() {
   document.querySelector('#finance-table').addEventListener('click', (event) => {
     const button = event.target.closest('[data-finance-pay]');
     if (button) openPaymentForm(button.dataset.financePay);
+  });
+  document.querySelector('#payment-submissions-table').addEventListener('click', (event) => {
+    const button = event.target.closest('[data-payment-submission-id]');
+    if (button) reviewPaymentSubmission(button.dataset.paymentSubmissionId, button.dataset.paymentSubmissionDecision === 'true');
   });
   document.addEventListener('finance:record-payment', (event) => openPaymentForm(event.detail.studentId));
 }

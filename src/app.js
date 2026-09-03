@@ -9,6 +9,7 @@ import { initFinance, loadFinance } from './modules/finance.js';
 import { initInventory, loadInventory } from './modules/inventory.js';
 import { initCourses, loadCourses } from './modules/courses.js';
 import { initStudentProfile, openStudentProfile } from './modules/student-profile.js';
+import { initStudentPayments } from './modules/student-payments.js';
 import { initAcademics, loadAcademics } from './modules/academics.js';
 import { initResults, loadResults } from './modules/results.js';
 import { initTimetable, loadTimetable } from './modules/timetable.js';
@@ -20,6 +21,7 @@ import { initAssessments, loadAssessments } from './modules/assessments.js';
 import { initSettings, loadSettings } from './modules/settings.js';
 import { initHelp } from './modules/help.js';
 import { initLiveClasses, loadLiveClasses } from './modules/live-classes.js';
+import { initCertificates, loadCertificates } from './modules/certificates.js';
 
 const appShell = document.querySelector('#app-shell');
 const authScreen = document.querySelector('#auth-screen');
@@ -33,6 +35,7 @@ const viewLoaders = {
   workers: loadWorkers,
   academics: loadAcademics,
   finance: loadFinance,
+  certificates: loadCertificates,
   inventory: loadInventory,
   attendance: loadAttendance,
   results: loadResults,
@@ -72,7 +75,7 @@ function setAdministratorControls() {
 function canAccessView(target) {
   if (isAdministrator()) return true;
   const trainerViews = new Set(['attendance', 'results', 'learning', 'assessments', 'timetable', 'library', 'announcements']);
-  const studentViews = new Set(['student-profile', 'results', 'assessments', 'timetable', 'library', 'announcements']);
+  const studentViews = new Set(['student-profile', 'certificates', 'results', 'assessments', 'timetable', 'library', 'announcements']);
   return isTrainer() ? trainerViews.has(target) : studentViews.has(target);
 }
 
@@ -195,6 +198,7 @@ initFinance();
 initInventory();
 initCourses();
 initStudentProfile();
+initStudentPayments();
 initAcademics();
 initResults();
 initTimetable();
@@ -206,5 +210,6 @@ initAssessments();
 initSettings();
 initHelp();
 initLiveClasses();
+initCertificates();
 initSharedInteractions();
 initializeAuth();
