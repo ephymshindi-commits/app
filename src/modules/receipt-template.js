@@ -14,9 +14,11 @@ function detailRow(label, value) {
 
 export function receiptDocument(payment) {
   const student = Array.isArray(payment.students) ? payment.students[0] : payment.students;
-  const invoice = Array.isArray(payment.invoices) ? payment.invoices[0] : payment.invoices;
   const studentName = `${student?.first_name || ''} ${student?.last_name || ''}`.trim() || 'Student';
   const receivedAt = payment.received_at ? new Date(payment.received_at).toLocaleString() : '—';
+  const balance = Number(payment.balance || 0);
+  const balanceLabel = balance < 0 ? 'Excess credit after payment' : 'Fee balance after payment';
+  const balanceValue = balance < 0 ? formatKes(Math.abs(balance)) : formatKes(balance);
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -87,8 +89,8 @@ export function receiptDocument(payment) {
     </section>
     <section class="paid-banner"><span>AMOUNT RECEIVED</span><strong>${escapeHtml(formatKes(payment.amount))}</strong><small>Received on ${escapeHtml(receivedAt)}</small></section>
     <p class="section-label">STUDENT DETAILS</p>
-    <dl class="details">${detailRow('Student name', studentName)}${detailRow('Registration number', student?.registration_number)}${detailRow('Fee charge number', invoice?.invoice_number)}${detailRow('Payment method', payment.method)}${detailRow('Transaction reference', payment.reference)}${detailRow('Receipt status', 'Verified payment')}</dl>
-    <section class="balance"><span>Account balance after this payment</span><strong>${escapeHtml(formatKes(payment.balance || 0))}</strong></section>
+    <dl class="details">${detailRow('Student name', studentName)}${detailRow('Registration number', student?.registration_number)}${detailRow('Programme fee', formatKes(payment.totalFee || 0))}${detailRow('Payment method', payment.method)}${detailRow('Transaction reference', payment.reference)}${detailRow('Receipt status', 'Verified payment')}</dl>
+    <section class="balance"><span>${escapeHtml(balanceLabel)}</span><strong>${escapeHtml(balanceValue)}</strong></section>
     <section class="verification"><strong>Thank you for your payment.</strong><br />Keep this official receipt for your records. For any query, present the receipt number and student registration number to the college finance office.</section>
     <footer class="footer"><div><strong>LOVE &amp; TRUTH BIBLE AND SKILLS TRAINING COLLEGE</strong><br />This is a computer-generated official receipt.</div><div>Receipt no. ${escapeHtml(payment.receipt_number)}<br />Generated ${escapeHtml(new Date().toLocaleString())}</div></footer>
   </main>

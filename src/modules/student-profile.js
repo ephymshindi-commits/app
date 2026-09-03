@@ -1,6 +1,6 @@
 import { formatKes, friendlyDbError, initials, registrationLabel, requireAdministrator, setText, showToast, state } from './core.js';
 
-const profileState = { student: null, invoices: [], payments: [], activeTab: 'overview', source: 'students' };
+const profileState = { student: null, finance: null, payments: [], activeTab: 'overview', source: 'students' };
 
 function related(record) {
   return Array.isArray(record) ? record[0] : record;
@@ -61,35 +61,32 @@ function renderOverview(content) {
 }
 
 function renderFinance(content) {
-  const invoices = profileState.invoices;
   const payments = profileState.payments;
-  const invoiced = invoices.reduce((total, invoice) => total + Number(invoice.amount || 0), 0);
-  const paid = payments.reduce((total, payment) => total + Number(payment.amount || 0), 0);
-  const outstanding = Math.max(0, invoiced - paid);
+  const account = profileState.finance || { total_fee: 0, total_paid: 0, balance: 0, account_state: 'fee structure pending' };
+  const balance = Number(account.balance || 0);
+  const balanceLabel = balance < 0 ? 'Excess credit' : balance === 0 && Number(account.total_fee) > 0 ? 'Balance' : 'Fee balance';
+  const balanceValue = balance < 0 ? formatKes(Math.abs(balance)) : formatKes(balance);
   const stats = createElement('div', 'stats-grid mini');
-  stats.append(stat('Total invoiced', formatKes(invoiced)), stat('Payments received', formatKes(paid), `${payments.length} payment${payments.length === 1 ? '' : 's'} recorded`), stat('Outstanding balance', formatKes(outstanding)));
+  stats.append(
+    stat('Programme fee', formatKes(account.total_fee)),
+    stat('Payments received', formatKes(account.total_paid), `${payments.length} payment${payments.length === 1 ? '' : 's'} recorded`),
+    stat(balanceLabel, balanceValue, account.account_state || '—'),
+  );
   content.append(stats);
 
-  const invoicePanel = panel('Invoices', 'All invoices issued to this student.');
-  const invoiceWrap = createElement('div', 'table-wrap');
-  const invoiceTable = document.createElement('table');
-  const invoiceHead = document.createElement('thead');
-  invoiceHead.innerHTML = '<tr><th>Invoice no.</th><th>Amount</th><th>Due date</th><th>Status</th></tr>';
-  const invoiceBody = document.createElement('tbody');
-  invoices.forEach((invoice) => appendRow(invoiceBody, [invoice.invoice_number, formatKes(invoice.amount), dateText(invoice.due_on), invoice.status]));
-  if (!invoices.length) appendRow(invoiceBody, ['No invoices issued.', '—', '—', '—']);
-  invoiceTable.append(invoiceHead, invoiceBody);
-  invoiceWrap.append(invoiceTable);
-  invoicePanel.append(invoiceWrap);
-  content.append(invoicePanel);
-
-  const paymentPanel = panel('Payment record', 'Receipts recorded against this student account.');
+  const paymentPanel = panel('Payment record', 'Receipts recorded against this student account and its programme fee structure.');
+  if (requireAdministrator()) {
+    const payButton = createElement('button', 'primary-button', 'Pay');
+    payButton.type = 'button';
+    payButton.dataset.studentFinancePay = profileState.student.id;
+    paymentPanel.querySelector('.panel-head').append(payButton);
+  }
   const paymentWrap = createElement('div', 'table-wrap');
   const paymentTable = document.createElement('table');
   const paymentHead = document.createElement('thead');
-  paymentHead.innerHTML = '<tr><th>Receipt no.</th><th>Invoice</th><th>Amount</th><th>Method</th><th>Received</th></tr>';
+  paymentHead.innerHTML = '<tr><th>Receipt no.</th><th>Amount</th><th>Method</th><th>Reference</th><th>Received</th></tr>';
   const paymentBody = document.createElement('tbody');
-  payments.forEach((payment) => appendRow(paymentBody, [payment.receipt_number, related(payment.invoices)?.invoice_number || '—', formatKes(payment.amount), payment.method, new Date(payment.received_at).toLocaleDateString()]));
+  payments.forEach((payment) => appendRow(paymentBody, [payment.receipt_number, formatKes(payment.amount), payment.method, payment.reference || '—', new Date(payment.received_at).toLocaleDateString()]));
   if (!payments.length) appendRow(paymentBody, ['No payments recorded.', '—', '—', '—', '—']);
   paymentTable.append(paymentHead, paymentBody);
   paymentWrap.append(paymentTable);
@@ -151,17 +148,17 @@ export async function openStudentProfile(studentId, tab = 'overview', source = '
       if (ownStudentError || !ownStudent) throw ownStudentError || new Error('Student profile was not found.');
       studentId = ownStudent.id;
     }
-    const [studentResult, invoicesResult, paymentsResult] = await Promise.all([
+    const [studentResult, financeResult, paymentsResult] = await Promise.all([
       state.client.from('students').select('id, registration_number, first_name, last_name, phone, personal_email, status, admitted_at, next_of_kin_name, next_of_kin_relationship, next_of_kin_phone, programmes(name, code)').eq('id', studentId).maybeSingle(),
-      state.role === 'student' ? Promise.resolve({ data: [], error: null }) : state.client.from('invoices').select('id, invoice_number, amount, due_on, status').eq('student_id', studentId).order('created_at', { ascending: false }),
-      state.role === 'student' ? Promise.resolve({ data: [], error: null }) : state.client.from('payments').select('id, receipt_number, amount, method, received_at, invoices(invoice_number)').eq('student_id', studentId).order('received_at', { ascending: false }),
+      state.role === 'student' ? Promise.resolve({ data: null, error: null }) : state.client.rpc('student_finance_snapshot', { target_student_id: studentId }).maybeSingle(),
+      state.role === 'student' ? Promise.resolve({ data: [], error: null }) : state.client.from('payments').select('id, receipt_number, amount, method, reference, received_at').eq('student_id', studentId).order('received_at', { ascending: false }),
     ]);
     if (studentResult.error) throw studentResult.error;
     if (!studentResult.data) throw new Error('Student record was not found.');
-    if (invoicesResult.error) throw invoicesResult.error;
+    if (financeResult.error) throw financeResult.error;
     if (paymentsResult.error) throw paymentsResult.error;
     profileState.student = studentResult.data;
-    profileState.invoices = invoicesResult.data || [];
+    profileState.finance = financeResult.data;
     profileState.payments = paymentsResult.data || [];
     renderProfile();
   } catch (error) {
@@ -188,5 +185,14 @@ export function initStudentProfile() {
   }));
   document.querySelector('#student-profile-back').addEventListener('click', () => {
     document.dispatchEvent(new CustomEvent('student-profile:back', { detail: { source: profileState.source } }));
+  });
+  document.querySelector('#student-profile-content').addEventListener('click', (event) => {
+    const button = event.target.closest('[data-student-finance-pay]');
+    if (button) document.dispatchEvent(new CustomEvent('finance:record-payment', { detail: { studentId: button.dataset.studentFinancePay } }));
+  });
+  document.addEventListener('student-profile:refresh-finance', (event) => {
+    if (profileState.student?.id === event.detail?.studentId && profileState.activeTab === 'finance') {
+      openStudentProfile(event.detail.studentId, 'finance', 'finance');
+    }
   });
 }

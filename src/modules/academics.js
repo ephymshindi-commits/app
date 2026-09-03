@@ -56,6 +56,15 @@ function dateText(value) {
   return value ? new Date(`${value}T00:00:00`).toLocaleDateString() : '—';
 }
 
+function addUnitButton(programmeId) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'text-button';
+  button.dataset.addUnitFor = programmeId;
+  button.textContent = 'Add unit';
+  return button;
+}
+
 export async function loadAcademics() {
   if (!requireAdministrator()) return;
   setText('programmes-message', 'Loading programmes…');
@@ -72,7 +81,7 @@ export async function loadAcademics() {
     [programmesResult, unitsResult, yearsResult, semestersResult, feesResult].forEach((result) => { if (result.error) throw result.error; });
     clearTable('programmes-table');
     (programmesResult.data || []).forEach((programme) => appendTableRow('programmes-table', [
-      `${programme.name} (${programme.code})`, relation(programme.departments)?.name || '—', `${programme.duration_years} year${Number(programme.duration_years) === 1 ? '' : 's'}`, programme.active ? 'Active' : 'Inactive',
+      `${programme.name} (${programme.code})`, relation(programme.departments)?.name || '—', `${programme.duration_years} year${Number(programme.duration_years) === 1 ? '' : 's'}`, programme.active ? 'Active' : 'Inactive', addUnitButton(programme.id),
     ]));
     clearTable('units-table');
     (unitsResult.data || []).forEach((unit) => appendTableRow('units-table', [
@@ -162,6 +171,25 @@ async function submitProgramme(event) {
   finally { setButtonBusy(button, false, '', 'Save programme'); }
 }
 
+async function submitDepartment(event) {
+  event.preventDefault();
+  if (!requireAdministrator()) return;
+  const button = document.querySelector('#save-department');
+  setButtonBusy(button, true, 'Saving…', 'Save department');
+  setFormMessage('department-form-message');
+  try {
+    const { error } = await state.client.from('departments').insert({
+      name: document.querySelector('#department-name').value.trim(),
+      code: document.querySelector('#department-code').value.trim().toUpperCase(),
+    });
+    if (error) throw error;
+    closeDialog('department-modal');
+    showToast('Department saved. It is now available when creating a programme.');
+    await loadAcademics();
+  } catch (error) { setFormMessage('department-form-message', friendlyDbError(error, 'Could not save department.')); }
+  finally { setButtonBusy(button, false, '', 'Save department'); }
+}
+
 async function submitUnit(event) {
   event.preventDefault();
   const button = document.querySelector('#save-unit');
@@ -175,6 +203,17 @@ async function submitUnit(event) {
     closeDialog('unit-modal'); showToast('Unit saved.'); await loadAcademics();
   } catch (error) { setFormMessage('unit-form-message', friendlyDbError(error, 'Could not save unit.')); }
   finally { setButtonBusy(button, false, '', 'Save unit'); }
+}
+
+async function openUnitForProgramme(programmeId) {
+  if (!requireAdministrator()) return;
+  try {
+    await loadProgrammeOptions();
+    document.querySelector('#unit-form').reset();
+    document.querySelector('#unit-programme').value = programmeId;
+    setFormMessage('unit-form-message');
+    openDialog('unit-modal');
+  } catch (error) { showToast(friendlyDbError(error, 'Unable to prepare the unit form.')); }
 }
 
 async function submitAcademicYear(event) {
@@ -213,14 +252,21 @@ async function submitSemester(event) {
 }
 
 export function initAcademics() {
+  document.querySelector('#add-department').addEventListener('click', () => openSetupDialog('department-modal', null, 'department-form', 'department-form-message'));
   document.querySelector('#add-programme').addEventListener('click', () => openSetupDialog('programme-modal', loadDepartmentOptions, 'programme-form', 'programme-form-message'));
   document.querySelector('#add-unit').addEventListener('click', () => openSetupDialog('unit-modal', loadProgrammeOptions, 'unit-form', 'unit-form-message'));
+  document.querySelector('#add-unit-secondary').addEventListener('click', () => openSetupDialog('unit-modal', loadProgrammeOptions, 'unit-form', 'unit-form-message'));
   document.querySelector('#add-academic-year').addEventListener('click', () => openSetupDialog('academic-year-modal', null, 'academic-year-form', 'academic-year-form-message'));
   document.querySelector('#add-semester').addEventListener('click', () => openSetupDialog('semester-modal', loadAcademicYearOptions, 'semester-form', 'semester-form-message'));
   document.querySelector('#set-programme-fee').addEventListener('click', openFeeStructureDialog);
   document.querySelector('#programme-form').addEventListener('submit', submitProgramme);
+  document.querySelector('#department-form').addEventListener('submit', submitDepartment);
   document.querySelector('#unit-form').addEventListener('submit', submitUnit);
   document.querySelector('#academic-year-form').addEventListener('submit', submitAcademicYear);
   document.querySelector('#semester-form').addEventListener('submit', submitSemester);
   document.querySelector('#fee-structure-form').addEventListener('submit', submitFeeStructure);
+  document.querySelector('#programmes-table').addEventListener('click', (event) => {
+    const button = event.target.closest('[data-add-unit-for]');
+    if (button) openUnitForProgramme(button.dataset.addUnitFor);
+  });
 }
