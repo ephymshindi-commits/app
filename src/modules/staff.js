@@ -61,6 +61,7 @@ function workerPayload() {
     jobTitle: document.querySelector('#worker-title').value.trim(),
     departmentId: document.querySelector('#worker-department').value || null,
     phone: document.querySelector('#worker-phone').value.trim() || null,
+    temporaryPassword: document.querySelector('#worker-password').value,
     role: document.querySelector('#worker-role').value,
     employmentStatus: document.querySelector('#worker-status').value,
   };
@@ -70,19 +71,21 @@ async function submitWorker(event) {
   event.preventDefault();
   if (!requireAdministrator()) return;
   const button = document.querySelector('#save-worker');
-  setButtonBusy(button, true, 'Sending invite…', 'Invite worker');
+  setButtonBusy(button, true, 'Creating…', 'Create staff account');
   setFormMessage('worker-form-message');
   try {
     const { data, error } = await state.client.functions.invoke('admin-create-worker', { body: workerPayload() });
     if (error) throw error;
     if (data?.error) throw new Error(data.error);
     closeDialog('worker-modal');
-    showToast('Worker account created and invitation sent.');
+    document.querySelector('#worker-login-details').textContent = `Staff member: ${data.account.fullName}\nEmail: ${data.account.email}\nTemporary password: ${workerPayload().temporaryPassword}`;
+    openDialog('worker-login-details-modal');
+    showToast('Staff account created. Give the login details to the staff member securely.');
     await loadWorkers();
   } catch (error) {
     setFormMessage('worker-form-message', await friendlyFunctionError(error, 'Could not provision this worker.'));
   } finally {
-    setButtonBusy(button, false, '', 'Invite worker');
+    setButtonBusy(button, false, '', 'Create staff account');
   }
 }
 

@@ -71,26 +71,30 @@ Deno.serve(async (request) => {
   const phone = typeof input.phone === 'string' ? input.phone.trim() || null : null;
   const departmentId = typeof input.departmentId === 'string' && input.departmentId ? input.departmentId : null;
   const employmentStatus = typeof input.employmentStatus === 'string' ? input.employmentStatus : 'active';
+  const temporaryPassword = typeof input.temporaryPassword === 'string' ? input.temporaryPassword : '';
 
-  if (!fullName || !email || !employeeNumber || !jobTitle) {
-    return response({ error: 'Name, email, employee number and job title are required.' }, 400);
+  if (!fullName || !email || !employeeNumber || !jobTitle || !temporaryPassword) {
+    return response({ error: 'Name, email, employee number, job title and temporary password are required.' }, 400);
   }
-  if (!/^\S+@\S+\.\S+$/.test(email) || !/^[A-Za-z0-9/_-]{3,64}$/.test(employeeNumber)) {
-    return response({ error: 'Enter a valid email and employee number.' }, 400);
+  if (!/^\S+@\S+\.\S+$/.test(email) || !/^[A-Za-z0-9/_-]{3,64}$/.test(employeeNumber) || temporaryPassword.length < 12) {
+    return response({ error: 'Enter a valid email and employee number, plus a temporary password of at least 12 characters.' }, 400);
   }
   if (!allowedRoles.has(role) || !allowedStatuses.has(employmentStatus)) {
     return response({ error: 'The selected role or employment status is not allowed.' }, 400);
   }
 
-  const { data: invitation, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(email, {
-    data: { full_name: fullName },
+  const { data: account, error: accountError } = await adminClient.auth.admin.createUser({
+    email,
+    password: temporaryPassword,
+    email_confirm: true,
+    user_metadata: { full_name: fullName, temporary_password: true },
   });
-  if (inviteError || !invitation.user) {
-    return response({ error: 'Could not create the worker account. The email may already be in use.' }, 409);
+  if (accountError || !account.user) {
+    return response({ error: accountError?.message || 'Could not create the worker account.' }, 409);
   }
 
   try {
-    const workerId = invitation.user.id;
+    const workerId = account.user.id;
     const { error: insertProfileError } = await adminClient.from('profiles').insert({
       id: workerId, full_name: fullName, email, role,
     });
@@ -106,9 +110,9 @@ Deno.serve(async (request) => {
     }).select('id, employee_number, job_title, employment_status').single();
     if (staffError) throw staffError;
 
-    return response({ worker: staffMember }, 201);
+    return response({ worker: staffMember, account: { fullName, email } }, 201);
   } catch (error) {
-    await adminClient.auth.admin.deleteUser(invitation.user.id);
+    await adminClient.auth.admin.deleteUser(account.user.id);
     return response({ error: 'Worker account could not be finalised. No account was kept.' }, 500);
   }
 });
