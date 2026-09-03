@@ -6,6 +6,7 @@ import { createStudentProfileLink } from './student-profile.js';
 import { receiptDocument } from './receipt-template.js';
 
 let financeAccounts = new Map();
+let selectedPaymentStudentId = null;
 
 function receiptNumber() {
   const stamp = new Date().toISOString().replace(/[-:TZ.]/g, '').slice(0, 12);
@@ -69,6 +70,7 @@ async function openPaymentForm(studentId) {
       if (error || !data) throw error || new Error('Student finance account was not found.');
       account = data;
     }
+    selectedPaymentStudentId = studentId;
     document.querySelector('#payment-form').reset();
     document.querySelector('#payment-student-id').value = studentId;
     document.querySelector('#payment-student-account').textContent = `${account.first_name} ${account.last_name} · ${registrationLabel(account.registration_number)} · ${account.programme_name}`;
@@ -86,7 +88,7 @@ async function submitPayment(event) {
   setButtonBusy(button, true, 'Recording…', 'Record payment'); setFormMessage('payment-form-message');
   try {
     const { data: saved, error } = await state.client.rpc('record_student_payment', {
-      target_student_id: document.querySelector('#payment-student-id').value,
+      target_student_id: selectedPaymentStudentId || document.querySelector('#payment-student-id').value,
       paid_amount: Number(document.querySelector('#payment-amount').value),
       payment_method: document.querySelector('#payment-method').value,
       payment_reference: document.querySelector('#payment-reference').value.trim(),
@@ -98,6 +100,7 @@ async function submitPayment(event) {
       .eq('id', saved.payment_id).single();
     if (paymentError) throw paymentError;
     payment.balance = saved.balance; payment.totalFee = saved.total_fee; payment.accountState = saved.account_state;
+    selectedPaymentStudentId = null;
     closeDialog('payment-modal'); showToast('Payment recorded. Receipt is ready to print or download.');
     await loadFinance(); showConfirmation(payment);
     document.dispatchEvent(new CustomEvent('student-profile:refresh-finance', { detail: { studentId: payment.students?.id || payment.students?.[0]?.id } }));
