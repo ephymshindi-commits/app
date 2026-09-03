@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/verify-certificate/:hash",
-      "destination": "/api/verify-certificate?hash=:hash"
+      "destination": "https://xagmipuvbvzyqpzxkqbl.supabase.co/functions/v1/verify-certificate/:hash"
     }
   ]
 }
