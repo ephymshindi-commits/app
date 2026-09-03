@@ -42,7 +42,7 @@ set search_path = public
 as $$
 declare
   programme_code text;
-  registration_year integer := extract(year from current_date)::integer;
+  target_registration_year integer := extract(year from current_date)::integer;
   next_number integer;
   issued_number text;
 begin
@@ -63,14 +63,14 @@ begin
   end if;
 
   insert into public.student_registration_counters (programme_id, registration_year, last_issued)
-  select programme_id, registration_year, 1
+  select programme_id, target_registration_year, 1
   from public.students
   where id = target_student_id
   on conflict (programme_id, registration_year)
   do update set last_issued = public.student_registration_counters.last_issued + 1
   returning last_issued into next_number;
 
-  issued_number := format('%s/%s/%s', programme_code, lpad(next_number::text, 4, '0'), registration_year);
+  issued_number := format('%s/%s/%s', programme_code, lpad(next_number::text, 4, '0'), target_registration_year);
 
   update public.students
   set profile_id = target_profile_id,
