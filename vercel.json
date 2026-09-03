@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "api/verify-certificate.js": {
+      "runtime": "nodejs20.x"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/verify-certificate/:hash",
+      "destination": "/api/verify-certificate?hash=:hash"
+    }
+  ]
+}

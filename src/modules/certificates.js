@@ -2,7 +2,9 @@ import {
   appendTableRow, clearTable, closeDialog, formatKes, friendlyDbError, openDialog,
   requireAdministrator, setButtonBusy, setFormMessage, setText, showToast, state,
 } from './core.js';
-import { downloadCertificatePdf } from './certificate-pdf.js';
+import { certificatePreviewMarkup, downloadCertificatePdf } from './certificate-pdf.js';
+
+let previewCertificate = null;
 
 function related(value) {
   return Array.isArray(value) ? value[0] : value;
@@ -64,12 +66,13 @@ async function loadAdminCertificates() {
   (certificatesResult.data || []).forEach((certificate) => {
     const student = related(certificate.students); const programme = related(certificate.programmes);
     const statusAction = certificate.status === 'REVOKED' ? action('Activate', 'activate', certificate.id, true) : action('Revoke', 'revoke', certificate.id);
+    const preview = action('Preview', 'preview', certificate.id);
     const download = action('Download', 'download', certificate.id, true);
     appendTableRow('certificates-table', [
       `${student?.first_name || 'Student'} ${student?.last_name || ''}`.trim(),
       programme ? `${programme.name} (${programme.code})` : '—',
       certificate.certificate_hash.slice(0, 14), dateText(certificate.issued_at), certificate.status,
-      actionGroup([download, statusAction]),
+      actionGroup([preview, download, statusAction]),
     ]);
   });
   clearTable('certificate-signatories-table');
@@ -122,11 +125,22 @@ async function downloadCertificate(certificateId) {
   } catch (error) { showToast(error?.message || friendlyDbError(error, 'Unable to prepare this certificate download.')); }
 }
 
+async function openCertificatePreview(certificateId) {
+  try {
+    const { data, error } = await state.client.rpc('certificate_detail_for_view', { target_certificate_id: certificateId });
+    if (error || !data) throw error || new Error('Certificate details are unavailable.');
+    previewCertificate = data;
+    document.querySelector('#certificate-preview-content').innerHTML = certificatePreviewMarkup(data);
+    openDialog('certificate-preview-modal');
+  } catch (error) { showToast(friendlyDbError(error, 'Unable to prepare this certificate preview.')); }
+}
+
 async function handleCertificateAction(button) {
   const actionName = button.dataset.certificateAction;
   const id = button.dataset.certificateId;
   try {
     if (actionName === 'download') return downloadCertificate(id);
+    if (actionName === 'preview') return openCertificatePreview(id);
     if (!requireAdministrator()) return;
     if (actionName === 'approve-graduation') {
       const { error } = await state.client.rpc('set_graduation_approval', { target_student_id: id, approved_value: true, approval_note: null });
@@ -175,6 +189,11 @@ async function saveSignatory(event) {
 export function initCertificates() {
   document.querySelector('#add-signatory').addEventListener('click', openSignatoryForm);
   document.querySelector('#signatory-form').addEventListener('submit', saveSignatory);
+  document.querySelector('#download-preview-certificate').addEventListener('click', async () => {
+    if (!previewCertificate) return;
+    try { await downloadCertificatePdf(previewCertificate); }
+    catch (error) { showToast(error?.message || 'Unable to prepare this certificate download.'); }
+  });
   document.querySelector('#certificates').addEventListener('click', (event) => {
     const button = event.target.closest('[data-certificate-action]');
     if (button) handleCertificateAction(button);

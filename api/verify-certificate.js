@@ -4,9 +4,8 @@ export default async function handler(request, response) {
     return response.status(404).json({ valid: false, status: 'NOT_FOUND' });
   }
   const baseUrl = process.env.SUPABASE_URL || 'https://xagmipuvbvzyqpzxkqbl.supabase.co';
-  const verificationUrl = `${baseUrl}/functions/v1/verify-certificate/${encodeURIComponent(hash)}`;
   try {
-    const verified = await fetch(verificationUrl);
+    const verified = await fetch(`${baseUrl}/functions/v1/verify-certificate/${encodeURIComponent(hash)}`);
     const payload = await verified.json();
     response.setHeader('Cache-Control', 'no-store');
     return response.status(verified.status).json(payload);

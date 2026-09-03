@@ -49,6 +49,17 @@ export async function loadResults() {
   if (!staffCanManageResults() && state.role !== 'student') return;
   setText('results-message', 'Loading results…');
   try {
+    if (state.role === 'student') {
+      const { data, error } = await state.client.rpc('my_released_results');
+      if (error) throw error;
+      clearTable('results-table');
+      (data || []).forEach((result) => appendTableRow('results-table', [
+        'My result', `${result.unit_code} — ${result.unit_name}`, `${result.academic_year || ''} ${result.semester_name || ''}`.trim() || '—',
+        result.cat_score ?? '—', result.exam_score ?? '—', result.total_score ?? '—', result.grade || '—', 'Released', '—',
+      ]));
+      setText('results-message', data?.length ? 'Only released results are shown in your personal portal.' : 'No released results are available yet.');
+      return;
+    }
     const { data, error } = await state.client.from('unit_results')
       .select('id, cat_score, exam_score, total_score, grade, status, student_id, entered_by, students(first_name, last_name, registration_number), units(code, name), semesters(name, academic_years(name))')
       .order('updated_at', { ascending: false }).limit(200);

@@ -1,0 +1,27 @@
+.certificate-preview-modal { width:min(1000px,96vw); max-height:94vh; padding:0; overflow:auto; background:#edf1f8; }
+.certificate-preview-modal form { padding:18px; }
+.certificate-preview { position:relative; width:min(720px,100%); min-height:990px; margin:0 auto; padding:60px 55px 58px; overflow:hidden; color:#151a26; background:#fff; border:13px solid #d9ad3e; box-shadow:0 12px 32px #0b1e4729; font-family:Georgia,'Times New Roman',serif; isolation:isolate; }
+.certificate-preview::before, .certificate-preview::after { content:''; position:absolute; z-index:-2; width:285px; height:285px; border:38px solid #082750; border-radius:50%; }
+.certificate-preview::before { top:-160px; right:-110px; box-shadow:inset 0 0 0 11px #c89b31; transform:rotate(-30deg); }
+.certificate-preview::after { bottom:-165px; left:-120px; box-shadow:inset 0 0 0 11px #c89b31; transform:rotate(-30deg); }
+.certificate-watermark { position:absolute; inset:0; z-index:-1; opacity:.07; background-image:url('https://res.cloudinary.com/ywbvk3ek/image/upload/f_auto,q_auto/love_truth'); background-size:135px; background-repeat:repeat; }
+.certificate-preview-brand { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; text-align:center; }
+.certificate-preview-brand img { width:112px; height:112px; object-fit:contain; }
+.certificate-preview-contact { padding-top:15px; font:700 11px/1.55 'DM Sans',sans-serif; text-align:left; }
+.certificate-preview h2 { margin:22px 0 3px; color:#615019; font-size:26px; line-height:1.1; text-align:center; text-transform:uppercase; }
+.certificate-preview .certificate-offers { margin:2px 0 18px; font-size:21px; font-style:italic; text-align:center; }
+.certificate-preview .certificate-certifies { margin:0 0 10px; font-size:18px; font-style:italic; text-align:center; }
+.certificate-preview .certificate-name { margin:0 0 15px; color:#b8111a; font-size:28px; font-weight:800; text-align:center; text-transform:uppercase; }
+.certificate-preview .certificate-copy { max-width:560px; margin:0 auto 15px; font-size:17px; line-height:1.45; text-align:center; }
+.certificate-preview .certificate-programme { margin:4px auto 23px; color:#d21616; font-size:24px; font-weight:800; line-height:1.1; text-align:center; }
+.certificate-preview .certificate-units { display:grid; grid-template-columns:1fr 125px; gap:28px; margin:10px 14px 26px; font-size:13px; }
+.certificate-preview .certificate-units h3 { margin:0 0 7px; font:800 12px 'DM Sans',sans-serif; text-align:center; }
+.certificate-preview ol { margin:0; padding-left:22px; line-height:1.52; font-weight:700; }
+.certificate-preview .certificate-grades { padding-top:25px; line-height:1.52; font-weight:800; text-align:center; }
+.certificate-preview-footer { display:flex; align-items:end; justify-content:space-between; gap:15px; margin-top:24px; }
+.certificate-preview-signature { display:flex; min-width:150px; min-height:49px; padding-top:7px; border-top:2px solid #111; flex-direction:column; align-items:center; justify-content:end; font:800 11px 'DM Sans',sans-serif; text-align:center; text-transform:uppercase; }
+.certificate-preview-signature img { max-width:105px; max-height:28px; object-fit:contain; margin-bottom:2px; }
+.certificate-preview-signature small { margin-top:2px; color:#526078; font-size:10px; font-weight:600; text-transform:none; }
+.certificate-preview-qr { width:88px; height:88px; object-fit:contain; background:#fff; padding:4px; }
+.certificate-preview-hash { margin-top:18px; color:#bd1d1d; font:700 10px 'DM Sans',sans-serif; text-align:right; }
+@media (max-width:650px) { .certificate-preview { min-height:0; padding:35px 20px; border-width:8px; } .certificate-preview h2 { font-size:19px; } .certificate-preview .certificate-name { font-size:21px; } .certificate-preview .certificate-programme { font-size:19px; } .certificate-preview .certificate-units { grid-template-columns:1fr 90px; gap:12px; margin-inline:0; font-size:11px; } .certificate-preview-brand img { width:80px; height:80px; } }
