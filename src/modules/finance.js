@@ -70,7 +70,7 @@ async function openPaymentForm(studentId) {
       account = data;
     }
     document.querySelector('#payment-form').reset();
-    document.querySelector('#payment-student-id').value = account.student_id;
+    document.querySelector('#payment-student-id').value = studentId;
     document.querySelector('#payment-student-account').textContent = `${account.first_name} ${account.last_name} · ${registrationLabel(account.registration_number)} · ${account.programme_name}`;
     document.querySelector('#payment-account-summary').textContent = `Programme fee: ${formatKes(account.total_fee)} · Paid: ${formatKes(account.total_paid)} · ${accountLabel(account)}`;
     document.querySelector('#payment-receipt').value = receiptNumber();
