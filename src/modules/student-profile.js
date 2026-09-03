@@ -1,4 +1,4 @@
-import { formatKes, friendlyDbError, initials, requireAdministrator, setText, showToast, state } from './core.js';
+import { formatKes, friendlyDbError, initials, registrationLabel, requireAdministrator, setText, showToast, state } from './core.js';
 
 const profileState = { student: null, invoices: [], payments: [], activeTab: 'overview', source: 'students' };
 
@@ -52,7 +52,7 @@ function renderOverview(content) {
   const table = document.createElement('table');
   const body = document.createElement('tbody');
   appendRow(body, ['Admission date', dateText(student.admitted_at)]);
-  appendRow(body, ['Registration number', student.registration_number]);
+  appendRow(body, ['Registration number', registrationLabel(student.registration_number)]);
   appendRow(body, ['Academic status', student.status.replace('_', ' ')]);
   appendRow(body, ['Next of kin', [student.next_of_kin_name, student.next_of_kin_relationship, student.next_of_kin_phone].filter(Boolean).join(' · ') || '—']);
   table.append(body);
@@ -114,9 +114,9 @@ function renderProfile() {
   const student = profileState.student;
   const programme = related(student.programmes);
   setText('student-profile-name', `${student.first_name} ${student.last_name}`);
-  setText('student-profile-subtitle', `${student.registration_number} · Student profile`);
+  setText('student-profile-subtitle', `${registrationLabel(student.registration_number)} · Student profile`);
   setText('student-profile-avatar', initials(`${student.first_name} ${student.last_name}`));
-  setText('student-profile-registration', student.registration_number);
+  setText('student-profile-registration', registrationLabel(student.registration_number));
   setText('student-profile-programme', programme ? `${programme.name}${programme.code ? ` (${programme.code})` : ''}` : 'Programme not assigned');
   setText('student-profile-phone', student.phone || '—');
   setText('student-profile-email', student.personal_email || '—');

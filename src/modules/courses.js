@@ -1,5 +1,5 @@
 import {
-  state, closeDialog, friendlyDbError, isAdministrator, openDialog, requireAdministrator,
+  state, closeDialog, friendlyDbError, isAdministrator, openDialog, registrationLabel, requireAdministrator,
   setButtonBusy, setFormMessage, setText, showToast,
 } from './core.js';
 
@@ -123,7 +123,7 @@ async function openEnrolmentForm(courseId) {
       .select('id, registration_number, first_name, last_name').eq('status', 'active').order('registration_number').limit(500);
     if (error) throw error;
     select.replaceChildren(option('Select student'));
-    (data || []).forEach((student) => select.append(option(`${student.registration_number} — ${student.first_name} ${student.last_name}`, student.id)));
+    (data || []).forEach((student) => select.append(option(`${registrationLabel(student.registration_number)} — ${student.first_name} ${student.last_name}`, student.id)));
     setFormMessage('enrolment-form-message');
     openDialog('enrolment-modal');
   } catch (error) {

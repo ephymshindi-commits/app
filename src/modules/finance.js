@@ -1,6 +1,6 @@
 import {
   state, appendTableRow, clearTable, closeDialog, formatKes, friendlyDbError, friendlyFunctionError, openDialog,
-  requireAdministrator, setButtonBusy, setFormMessage, setText, showToast,
+  registrationLabel, requireAdministrator, setButtonBusy, setFormMessage, setText, showToast,
 } from './core.js';
 import { createStudentProfileLink } from './student-profile.js';
 import { loadOperationalSummary } from './operational-summary.js';
@@ -44,7 +44,7 @@ async function loadStudentsInto(selectId) {
     .eq('status', 'active').order('registration_number').limit(500);
   if (error) throw error;
   select.replaceChildren(option('Select student'));
-  (data || []).forEach((student) => select.append(option(`${student.registration_number} — ${student.first_name} ${student.last_name}`, student.id)));
+  (data || []).forEach((student) => select.append(option(`${registrationLabel(student.registration_number)} — ${student.first_name} ${student.last_name}`, student.id)));
 }
 
 async function loadOpenInvoicesIntoPaymentForm() {

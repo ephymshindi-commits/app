@@ -15,13 +15,12 @@ function applyBrand(settings) {
 export async function loadSettings() {
   setText('settings-form-message', 'Loading settings…');
   try {
-    const { data, error } = await state.client.from('institution_settings').select('institution_name, academic_year_label, support_email, agora_app_id').eq('id', true).maybeSingle();
+    const { data, error } = await state.client.from('institution_settings').select('institution_name, academic_year_label, support_email').eq('id', true).maybeSingle();
     if (error) throw error;
     currentSettings = data;
     document.querySelector('#settings-institution-name').value = data?.institution_name || 'LOVE & TRUTH BIBLE AND SKILLS TRAINING COLLEGE';
     document.querySelector('#settings-academic-year').value = data?.academic_year_label || 'Academic year 2026 / 2027';
     document.querySelector('#settings-support-email').value = data?.support_email || '';
-    document.querySelector('#settings-agora-app-id').value = data?.agora_app_id || '';
     setText('settings-form-message', isAdministrator() ? '' : 'Only administrators can update these settings.');
     document.querySelector('#save-settings').hidden = !isAdministrator();
     applyBrand(data);
@@ -36,7 +35,7 @@ async function saveSettings(event) {
   const payload = {
     id: true, institution_name: document.querySelector('#settings-institution-name').value.trim(),
     academic_year_label: document.querySelector('#settings-academic-year').value.trim(), support_email: document.querySelector('#settings-support-email').value.trim() || null,
-    agora_app_id: document.querySelector('#settings-agora-app-id').value.trim() || null, updated_by: state.user.id,
+    updated_by: state.user.id,
   };
   try {
     const { data, error } = await state.client.from('institution_settings').upsert(payload).select().single();

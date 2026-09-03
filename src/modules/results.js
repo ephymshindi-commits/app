@@ -1,5 +1,5 @@
 import {
-  appendTableRow, clearTable, closeDialog, friendlyDbError, isAdministrator, isTrainer, openDialog,
+  appendTableRow, clearTable, closeDialog, friendlyDbError, isAdministrator, isTrainer, openDialog, registrationLabel,
   setButtonBusy, setFormMessage, setText, showToast, state,
 } from './core.js';
 import { createStudentProfileLink } from './student-profile.js';
@@ -28,7 +28,7 @@ async function loadFormOptions() {
   ]);
   [studentsResult, unitsResult, semestersResult].forEach((result) => { if (result.error) throw result.error; });
   const fields = [
-    ['result-student', studentsResult.data || [], (row) => `${row.registration_number} — ${row.first_name} ${row.last_name}`],
+    ['result-student', studentsResult.data || [], (row) => `${registrationLabel(row.registration_number)} — ${row.first_name} ${row.last_name}`],
     ['result-unit', unitsResult.data || [], (row) => `${row.code} — ${row.name}`],
     ['result-semester', semestersResult.data || [], (row) => `${relation(row.academic_years)?.name || 'Academic year'} — ${row.name}`],
   ];

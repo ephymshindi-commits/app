@@ -63,6 +63,10 @@ export function formatKes(value) {
   }).format(Number(value || 0));
 }
 
+export function registrationLabel(value) {
+  return value || 'Awaiting account creation';
+}
+
 export function setText(id, value) {
   const element = document.querySelector(`#${id}`);
   if (element) element.textContent = value;

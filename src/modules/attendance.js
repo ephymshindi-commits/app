@@ -1,6 +1,6 @@
 import {
   appendTableRow, clearTable, closeDialog, friendlyDbError, isAdministrator, isTrainer, openDialog,
-  setButtonBusy, setFormMessage, setText, showToast, state,
+  registrationLabel, setButtonBusy, setFormMessage, setText, showToast, state,
 } from './core.js';
 
 let rosterStudents = [];
@@ -72,7 +72,7 @@ function renderRoster() {
     const row = document.createElement('div'); row.className = 'attendance-roster-row';
     const copy = document.createElement('div');
     const name = document.createElement('strong'); name.textContent = `${student.first_name} ${student.last_name}`;
-    const number = document.createElement('small'); number.textContent = student.registration_number;
+    const number = document.createElement('small'); number.textContent = registrationLabel(student.registration_number);
     copy.append(name, number);
     const status = document.createElement('select'); status.dataset.attendanceStudentId = student.id;
     ['present', 'absent', 'late', 'excused'].forEach((value) => status.append(option(value[0].toUpperCase() + value.slice(1), value)));
