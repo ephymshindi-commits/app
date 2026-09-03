@@ -6,6 +6,22 @@ import { certificatePreviewMarkup, downloadCertificatePdf } from './certificate-
 
 let previewCertificate = null;
 
+const certificateTemplate = {
+  certificateHash: 'PREVIEW0000000000000000000000000000000000000000000000000000000',
+  issuedAt: '2026-01-05T00:00:00.000Z',
+  studentName: 'Student Name',
+  registrationNumber: 'LTBSC/0001/2026',
+  programmeName: 'Programme Name',
+  programmeCode: 'PROGRAMME',
+  verificationUrl: '/api/verify-certificate/preview',
+  units: [
+    { code: 'UNIT 101', name: 'Introduction to the programme', creditHours: 3, grade: 'CREDIT' },
+    { code: 'UNIT 102', name: 'Professional practice', creditHours: 3, grade: 'DISTINCTION' },
+    { code: 'UNIT 103', name: 'Practical application', creditHours: 3, grade: 'CREDIT' },
+  ],
+  signatories: [],
+};
+
 function related(value) {
   return Array.isArray(value) ? value[0] : value;
 }
@@ -131,8 +147,16 @@ async function openCertificatePreview(certificateId) {
     if (error || !data) throw error || new Error('Certificate details are unavailable.');
     previewCertificate = data;
     document.querySelector('#certificate-preview-content').innerHTML = certificatePreviewMarkup(data);
+    document.querySelector('#download-preview-certificate').disabled = false;
     openDialog('certificate-preview-modal');
   } catch (error) { showToast(friendlyDbError(error, 'Unable to prepare this certificate preview.')); }
+}
+
+function openCertificateTemplatePreview() {
+  previewCertificate = null;
+  document.querySelector('#certificate-preview-content').innerHTML = certificatePreviewMarkup(certificateTemplate);
+  document.querySelector('#download-preview-certificate').disabled = true;
+  openDialog('certificate-preview-modal');
 }
 
 async function handleCertificateAction(button) {
@@ -188,6 +212,7 @@ async function saveSignatory(event) {
 
 export function initCertificates() {
   document.querySelector('#add-signatory').addEventListener('click', openSignatoryForm);
+  document.querySelector('#preview-certificate-template').addEventListener('click', openCertificateTemplatePreview);
   document.querySelector('#signatory-form').addEventListener('submit', saveSignatory);
   document.querySelector('#download-preview-certificate').addEventListener('click', async () => {
     if (!previewCertificate) return;
