@@ -1,5 +1,5 @@
 import {
-  closeDialog, configureClient, isAdministrator, isStudent, isTrainer, loadProfile, renderPageTitle,
+  closeDialog, configureClient, friendlyFunctionError, isAdministrator, isStudent, isTrainer, loadProfile, renderPageTitle,
   showAuthMessage, showToast, state,
 } from './modules/core.js';
 import { loadDashboard } from './modules/dashboard.js';
@@ -129,7 +129,7 @@ async function handleSignIn(event) {
       ? state.client.auth.signInWithPassword({ email: identifier, password: loginPassword.value })
       : state.client.functions.invoke('student-registration-login', { body: { registrationNumber: identifier, password: loginPassword.value } });
     const { data, error } = await request;
-    if (error) showAuthMessage(error.message);
+    if (error) showAuthMessage(identifier.includes('@') ? error.message : await friendlyFunctionError(error, 'Invalid registration number or password.'));
     else if (data?.error) showAuthMessage(data.error);
     else if (data?.session) {
       const { error: sessionError } = await state.client.auth.setSession(data.session);
