@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const corsHeaders = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' };
+const corsHeaders = { 'Access-Control-Allow-Origin': 'https://ltbstc.com', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' };
 function response(body: Record<string, unknown>, status = 200) { return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
 function readPlatformKey(dictionaryName: string, legacyName: string) { try { return Deno.env.get(legacyName) || Object.values(JSON.parse(Deno.env.get(dictionaryName) || '{}'))[0] || null; } catch { return null; } }
 function phoneNumber(value: string) { const digits = value.replace(/\D/g, ''); if (/^0\d{9}$/.test(digits)) return `254${digits.slice(1)}`; if (/^254\d{9}$/.test(digits)) return digits; return null; }

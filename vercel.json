@@ -1,4 +1,17 @@
 {
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "Permissions-Policy", "value": "camera=(self), microphone=(self), geolocation=(), payment=(), usb=()" },
+        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; script-src 'self' https://cdn.jsdelivr.net https://esm.sh; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://res.cloudinary.com https://api.qrserver.com; connect-src 'self' https://xagmipuvbvzyqpzxkqbl.supabase.co https://*.agora.io wss://*.agora.io; frame-src https://www.google.com; media-src 'self' blob:; worker-src 'self' blob:" }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/verify-certificate/:hash",
