@@ -71,6 +71,8 @@ h2 { margin:0; font-size:clamp(35px,4vw,54px); letter-spacing:-.04em; }
 .contact-copy > p:last-of-type { max-width:480px; color:var(--muted); }
 address { display:flex; flex-direction:column; gap:8px; margin-top:28px; font-style:normal; font-size:18px; font-weight:700; }
 address a { color:#1554af; }
+.whatsapp-contact { display:inline-flex; align-items:center; gap:7px; width:max-content; margin-top:6px; color:#0a7d48; font-size:15px; }
+.whatsapp-contact:hover { color:#075f38; text-decoration:underline; }
 address p { margin:13px 0 0; color:var(--muted); font-size:15px; font-weight:400; }
 .map-wrap { overflow:hidden; border:1px solid var(--line); background:#eef3fa; }
 .map-wrap iframe { display:block; width:100%; height:385px; border:0; filter:saturate(.85); }
@@ -82,7 +84,11 @@ details { min-height:145px; padding:23px; border:1px solid var(--line); backgrou
 summary { cursor:pointer; font-weight:700; }
 details p { margin:14px 0 0; color:var(--muted); font-size:14px; }
 footer { display:flex; align-items:center; justify-content:space-between; gap:28px; padding:30px clamp(25px,8vw,135px); border-top:1px solid #e4e9f1; color:var(--muted); font-size:13px; }
-footer .brand { font-size:14px; } footer .brand img { width:38px; height:38px; } footer > a:last-child { color:#1554af; font-weight:700; }
+footer .brand { font-size:14px; } footer .brand img { width:38px; height:38px; }
+.footer-copy p { margin:3px 0; } .footer-copy a { color:#1554af; font-weight:600; }
+.developer-credit { margin:0; color:#7b879b; font-size:12px; white-space:nowrap; } .developer-credit span { color:#355076; font-weight:700; letter-spacing:.02em; }
+.whatsapp-float { position:fixed; right:25px; bottom:25px; z-index:9; display:inline-flex; align-items:center; gap:9px; border-radius:999px; padding:13px 17px 13px 13px; color:#fff; background:#128c4f; box-shadow:0 12px 30px #063b2570; font-size:14px; font-weight:700; transition:transform .2s ease,background .2s ease; }
+.whatsapp-float:hover { background:#0a7040; transform:translateY(-2px); } .whatsapp-float svg { width:22px; height:22px; fill:currentColor; }
 dialog { width:min(400px,calc(100% - 40px)); border:0; border-radius:16px; padding:0; box-shadow:0 24px 70px #00184b47; }
 dialog::backdrop { background:#081b3c88; backdrop-filter:blur(3px); }
 dialog form { position:relative; padding:43px 35px; text-align:center; }
@@ -95,4 +101,4 @@ dialog form .primary-button { width:100%; margin-top:10px; }
 .login-copy,.login-message { color:var(--muted); font-size:14px; }
 .login-message { min-height:22px; color:#a13c42; text-align:left; }
 @media (max-width:900px) { .programme-grid { grid-template-columns:repeat(2,1fr); } .value-strip { grid-template-columns:1fr; } .value-strip article { min-height:auto; border-right:0; border-bottom:1px solid #ffffff24; } .value-strip article:last-child { border-bottom:0; } .admission-steps { grid-template-columns:1fr; } .faq-grid { grid-template-columns:1fr; } }
-@media (max-width:700px) { .site-header { padding:13px 20px; } nav { display:none; } .login-button { padding:10px 13px; font-size:13px; } .hero { grid-template-columns:1fr; } .hero-photo { min-height:320px; grid-row:1; } .hero-copy { padding:58px 25px 62px; } .hero-stats { gap:16px; margin-top:37px; } .about-section,.section-heading,.contact-section { grid-template-columns:1fr; gap:28px; } .section { padding:74px 25px; } .programme-grid { grid-template-columns:1fr; } .programme-grid article { min-height:0; } .student-callout { display:block; padding:60px 25px; } .student-callout h2 { font-size:39px; } .light-button { margin-top:27px; } .map-wrap iframe { height:300px; } footer { align-items:flex-start; flex-direction:column; padding:28px 25px; } }
+@media (max-width:700px) { .site-header { padding:13px 20px; } nav { display:none; } .login-button { padding:10px 13px; font-size:13px; } .hero { grid-template-columns:1fr; } .hero-photo { min-height:320px; grid-row:1; } .hero-copy { padding:58px 25px 62px; } .hero-stats { gap:16px; margin-top:37px; } .about-section,.section-heading,.contact-section { grid-template-columns:1fr; gap:28px; } .section { padding:74px 25px; } .programme-grid { grid-template-columns:1fr; } .programme-grid article { min-height:0; } .student-callout { display:block; padding:60px 25px; } .student-callout h2 { font-size:39px; } .light-button { margin-top:27px; } .map-wrap iframe { height:300px; } footer { align-items:flex-start; flex-direction:column; padding:28px 25px; } .whatsapp-float { right:17px; bottom:17px; padding:13px; } .whatsapp-float span { display:none; } }
