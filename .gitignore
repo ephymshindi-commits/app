@@ -5,6 +5,7 @@ src/app-config.js
 # Local Supabase Management API token (never commit this file).
 .env
 supabase/.env.local
+supabase/.temp/
 .vercel
 .vercel-deploy
 node_modules/

@@ -9,8 +9,22 @@ export const state = {
 export function configureClient() {
   const config = window.TVET_CONFIG || {};
   if (!config.supabaseUrl || !config.supabaseAnonKey || !window.supabase) return null;
+  const sharedStudentStorage = location.hostname.endsWith('ltbstc.com') ? {
+    getItem(key) {
+      const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return document.cookie.match(new RegExp(`(?:^|; )${escapedKey}=([^;]*)`))?.[1]
+        ? decodeURIComponent(document.cookie.match(new RegExp(`(?:^|; )${escapedKey}=([^;]*)`))[1])
+        : null;
+    },
+    setItem(key, value) {
+      document.cookie = `${key}=${encodeURIComponent(value)}; Path=/; Domain=.ltbstc.com; Max-Age=2592000; SameSite=Lax; Secure`;
+    },
+    removeItem(key) {
+      document.cookie = `${key}=; Path=/; Domain=.ltbstc.com; Max-Age=0; SameSite=Lax; Secure`;
+    },
+  } : undefined;
   state.client = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: sharedStudentStorage },
   });
   return state.client;
 }

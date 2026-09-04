@@ -82,30 +82,51 @@ export async function loadStudents(query = '') {
 }
 
 async function openStudentLogin(studentId) {
-  const { data: student, error } = await state.client.from('students').select('id, first_name, last_name, registration_number, personal_email, profile_id, programmes(name, code)').eq('id', studentId).maybeSingle();
+  const { data: student, error } = await state.client.from('students').select('id, first_name, last_name, registration_number, profile_id, programmes(name, code)').eq('id', studentId).maybeSingle();
   if (error || !student) return showToast('Unable to open that student account.');
   if (student.profile_id) return showToast('This student already has a login account.');
   document.querySelector('#student-login-form').reset();
   document.querySelector('#student-login-id').value = student.id;
   const programme = Array.isArray(student.programmes) ? student.programmes[0] : student.programmes;
   setText('student-login-name', `${student.first_name} ${student.last_name} · ${programme?.code || 'Programme code pending'} · Registration number will be issued when this account is created.`);
-  document.querySelector('#student-login-email').value = student.personal_email || '';
   setFormMessage('student-login-form-message'); openDialog('student-login-modal');
 }
 
 async function createStudentLogin(event) {
   event.preventDefault();
-  const button = document.querySelector('#save-student-login'); const password = document.querySelector('#student-login-password').value;
+  const button = document.querySelector('#save-student-login');
   setButtonBusy(button, true, 'Creating…', 'Create login'); setFormMessage('student-login-form-message');
   try {
-    const { data, error } = await state.client.functions.invoke('admin-create-student-login', { body: { studentId: document.querySelector('#student-login-id').value, email: document.querySelector('#student-login-email').value.trim(), temporaryPassword: password } });
+    const { data, error } = await state.client.functions.invoke('admin-create-student-login', { body: { studentId: document.querySelector('#student-login-id').value } });
     if (error || data?.error) throw error || new Error(data.error);
     closeDialog('student-login-modal');
-    document.querySelector('#student-login-details').textContent = `Student: ${data.account.fullName}\nRegistration number: ${data.account.registrationNumber}\nEmail: ${data.account.email}\nTemporary password: ${password}`;
+    document.querySelector('#student-login-details').textContent = `Student: ${data.account.fullName}\nUsername: ${data.account.username}\nTemporary password: ${data.account.temporaryPassword}`;
     openDialog('student-login-details-modal'); showToast('Student login created. Give the details to the student securely.');
     await loadStudents(document.querySelector('#student-search').value);
   } catch (error) { setFormMessage('student-login-form-message', await friendlyFunctionError(error, 'Could not create the student login.')); }
   finally { setButtonBusy(button, false, '', 'Create login'); }
+}
+
+async function provisionMissingLogins() {
+  if (!requireAdministrator()) return;
+  if (!window.confirm('Create secure login credentials for every active student who does not yet have an account? You will receive the temporary passwords once only.')) return;
+  const button = document.querySelector('#provision-student-logins');
+  setButtonBusy(button, true, 'Provisioning…', 'Provision missing logins');
+  try {
+    const { data, error } = await state.client.functions.invoke('admin-provision-student-logins');
+    if (error || data?.error) throw error || new Error(data.error);
+    const credentials = data.accounts || [];
+    document.querySelector('#student-login-details').textContent = credentials.length
+      ? credentials.map((account) => `Student: ${account.fullName}\nUsername: ${account.username}\nTemporary password: ${account.temporaryPassword}`).join('\n\n')
+      : 'Every active student already has a login account.';
+    openDialog('student-login-details-modal');
+    showToast(credentials.length ? `${credentials.length} student login${credentials.length === 1 ? '' : 's'} created.` : 'All active students already have login accounts.');
+    await loadStudents(document.querySelector('#student-search').value);
+  } catch (error) {
+    showToast(await friendlyFunctionError(error, 'Unable to provision the missing student accounts.'));
+  } finally {
+    setButtonBusy(button, false, '', 'Provision missing logins');
+  }
 }
 
 function resetStudentForm() {
@@ -159,11 +180,17 @@ async function submitStudent(event) {
   try {
     const request = editingStudentId
       ? state.client.from('students').update(payload).eq('id', editingStudentId)
-      : state.client.from('students').insert(payload);
-    const { error } = await request;
+      : state.client.from('students').insert(payload).select('id').single();
+    const { data, error } = await request;
     if (error) throw error;
     closeDialog('student-modal');
-    showToast(editingStudentId ? 'Student record updated.' : 'Student registered successfully.');
+    if (!editingStudentId && data?.id) {
+      const { data: accountData, error: accountError } = await state.client.functions.invoke('admin-create-student-login', { body: { studentId: data.id } });
+      if (accountError || accountData?.error) throw accountError || new Error(accountData.error);
+      document.querySelector('#student-login-details').textContent = `Student: ${accountData.account.fullName}\nUsername: ${accountData.account.username}\nTemporary password: ${accountData.account.temporaryPassword}`;
+      openDialog('student-login-details-modal');
+      showToast('Student registered and login created. Give the details to the student securely.');
+    } else showToast('Student record updated.');
     await loadStudents(document.querySelector('#student-search').value);
   } catch (error) {
     setFormMessage('student-form-message', friendlyDbError(error, 'Could not save the student record.'));
@@ -175,6 +202,7 @@ async function submitStudent(event) {
 export function initStudents() {
   document.querySelector('#add-student').addEventListener('click', () => openStudentForm());
   document.querySelector('#new-action').addEventListener('click', () => openStudentForm());
+  document.querySelector('#provision-student-logins').addEventListener('click', provisionMissingLogins);
   document.querySelector('#student-search').addEventListener('input', (event) => {
     clearTimeout(searchTimer);
     searchTimer = window.setTimeout(() => loadStudents(event.target.value), 250);

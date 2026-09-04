@@ -124,10 +124,17 @@ async function handleSignIn(event) {
   button.textContent = 'Signing in…';
   showAuthMessage();
   try {
-    const { error } = await state.client.auth.signInWithPassword({
-      email: loginEmail.value.trim(), password: loginPassword.value,
-    });
+    const identifier = loginEmail.value.trim();
+    const request = identifier.includes('@')
+      ? state.client.auth.signInWithPassword({ email: identifier, password: loginPassword.value })
+      : state.client.functions.invoke('student-registration-login', { body: { registrationNumber: identifier, password: loginPassword.value } });
+    const { data, error } = await request;
     if (error) showAuthMessage(error.message);
+    else if (data?.error) showAuthMessage(data.error);
+    else if (data?.session) {
+      const { error: sessionError } = await state.client.auth.setSession(data.session);
+      if (sessionError) showAuthMessage('Your student session could not be started. Please try again.');
+    }
   } catch (error) {
     showAuthMessage('Could not reach the sign-in service. Check your connection and try again.');
   } finally {

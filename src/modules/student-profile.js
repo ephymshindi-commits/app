@@ -59,6 +59,15 @@ function renderOverview(content) {
   table.append(body);
   details.append(table);
   content.append(details);
+  if (state.role === 'administrator') {
+    const account = panel('Student login', 'Students sign in with their registration number. Passwords are never stored in readable form.');
+    account.append(createElement('p', 'form-note', `Username: ${registrationLabel(student.registration_number)}`));
+    const action = createElement('button', 'outline-button', 'Reset temporary password');
+    action.type = 'button';
+    action.dataset.studentPasswordReset = student.id;
+    account.append(action);
+    content.append(account);
+  }
 }
 
 function renderFinance(content) {
@@ -196,6 +205,8 @@ export function initStudentProfile() {
   document.querySelector('#student-profile-content').addEventListener('click', (event) => {
     const button = event.target.closest('[data-student-finance-pay]');
     if (button) document.dispatchEvent(new CustomEvent('finance:record-payment', { detail: { studentId: button.dataset.studentFinancePay } }));
+    const resetButton = event.target.closest('[data-student-password-reset]');
+    if (resetButton) resetStudentPassword(resetButton.dataset.studentPasswordReset);
   });
   document.addEventListener('student-profile:refresh-finance', (event) => {
     const studentRefresh = state.role === 'student' || profileState.student?.id === event.detail?.studentId;
@@ -203,4 +214,19 @@ export function initStudentProfile() {
       openStudentProfile(state.role === 'student' ? null : event.detail.studentId, 'finance', profileState.source);
     }
   });
+}
+
+async function resetStudentPassword(studentId) {
+  if (!requireAdministrator()) return;
+  if (!window.confirm('Reset this student’s password? The new temporary password will be shown once.')) return;
+  try {
+    const { data, error } = await state.client.functions.invoke('admin-reset-student-password', { body: { studentId } });
+    if (error || data?.error) throw error || new Error(data.error);
+    const account = data.account;
+    document.querySelector('#student-login-details').textContent = `Student: ${account.fullName}\nUsername: ${account.username}\nTemporary password: ${account.temporaryPassword}`;
+    document.querySelector('#student-login-details-modal').showModal();
+    showToast('New temporary password created. Give it to the student privately.');
+  } catch (error) {
+    showToast(friendlyDbError(error, 'Unable to reset the student password.'));
+  }
 }

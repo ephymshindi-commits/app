@@ -3,6 +3,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const corsHeaders = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' };
 function response(body: Record<string, unknown>, status = 200) { return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
 function readPlatformKey(dictionaryName: string, legacyName: string) { try { return Deno.env.get(legacyName) || Object.values(JSON.parse(Deno.env.get(dictionaryName) || '{}'))[0] || null; } catch { return null; } }
+function temporaryPassword() { const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%'; const bytes = crypto.getRandomValues(new Uint8Array(18)); return Array.from(bytes, (value) => alphabet[value % alphabet.length]).join(''); }
+function loginEmail() { return `student.${crypto.randomUUID()}@login.ltbstc.com`; }
 
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -15,9 +17,9 @@ Deno.serve(async (request) => {
   const admin = createClient(supabaseUrl, serviceRoleKey);
   const { data: callerProfile } = await admin.from('profiles').select('role').eq('id', callerData.user.id).maybeSingle();
   if (callerProfile?.role !== 'administrator') return response({ error: 'Only administrators can create student accounts.' }, 403);
-  let input: { studentId?: unknown; email?: unknown; temporaryPassword?: unknown }; try { input = await request.json(); } catch { return response({ error: 'Invalid request body.' }, 400); }
-  const studentId = typeof input.studentId === 'string' ? input.studentId : ''; const email = typeof input.email === 'string' ? input.email.trim().toLowerCase() : ''; const temporaryPassword = typeof input.temporaryPassword === 'string' ? input.temporaryPassword : '';
-  if (!studentId || !/^\S+@\S+\.\S+$/.test(email) || temporaryPassword.length < 12) return response({ error: 'Use a valid email and a temporary password of at least 12 characters.' }, 400);
+  let input: { studentId?: unknown }; try { input = await request.json(); } catch { return response({ error: 'Invalid request body.' }, 400); }
+  const studentId = typeof input.studentId === 'string' ? input.studentId : '';
+  if (!studentId) return response({ error: 'Choose a student before creating a login.' }, 400);
   const { data: student, error: studentError } = await admin
     .from('students')
     .select('id, first_name, last_name, profile_id, programmes(code)')
@@ -26,9 +28,11 @@ Deno.serve(async (request) => {
   if (studentError || !student) return response({ error: 'Student record was not found.' }, 404);
   if (student.profile_id) return response({ error: 'This student already has a login account.' }, 409);
   const fullName = `${student.first_name} ${student.last_name}`;
+  const email = loginEmail();
+  const password = temporaryPassword();
   const { data: created, error: createError } = await admin.auth.admin.createUser({
     email,
-    password: temporaryPassword,
+    password,
     email_confirm: true,
     user_metadata: { full_name: fullName, temporary_password: true },
   });
@@ -46,7 +50,7 @@ Deno.serve(async (request) => {
       { target_student_id: student.id, target_profile_id: created.user.id },
     );
     if (registrationError || !registrationNumber) throw registrationError || new Error('Registration number could not be issued.');
-    return response({ account: { email, registrationNumber, fullName } }, 201);
+    return response({ account: { username: registrationNumber, temporaryPassword: password, fullName } }, 201);
   } catch (error) {
     await admin.auth.admin.deleteUser(created.user.id);
     const reason = error instanceof Error && error.message ? ` ${error.message}` : '';

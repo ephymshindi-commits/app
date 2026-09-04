@@ -96,6 +96,19 @@ The application now opens on a secure sign-in screen. It accepts only accounts c
 
 Before password-reset links will work in production, add the deployed application URL under **Authentication → URL Configuration → Redirect URLs**. A local `file://` preview cannot receive a recovery redirect; use an HTTPS deployment or local development server.
 
+## Student registration-number login
+
+Students sign in at `portal.ltbstc.com` with the registration number issued by the college, for example `C3/0001/2026`, and a temporary password. The student portal shares a secure `.ltbstc.com` session with the management application, then opens the existing student-only dashboard at `ltbstc.com`.
+
+Student credentials are provisioned only by protected Edge Functions. The administrator sees each generated temporary password exactly once when a student is registered, when creating a missing account, or after choosing **Reset temporary password** from a student record. Passwords are never stored in a readable database field or displayed again. The **Provision missing logins** action creates accounts only for active students who do not already have one; it does not reset existing passwords.
+
+Deploy these functions after any change to this workflow:
+
+- `admin-create-student-login`
+- `admin-provision-student-logins`
+- `admin-reset-student-password`
+- `student-registration-login` (must allow unauthenticated requests because it validates credentials itself)
+
 ## Recommended next delivery
 
 The next implementation pass should add approved Phase 1 access policies plus live student and academic queries/mutations. A thin protected server/API layer should be introduced before adding any operation that requires a secret or third-party payment/video API key.
