@@ -212,11 +212,11 @@ begin
   if not eligibility.eligible then raise exception 'Certificate cannot be issued: %', eligibility.reason; end if;
   select * into student from public.students where id = target_student_id;
   insert into public.certificates (student_id, programme_id, certificate_hash, status, issued_at, created_by)
-  values (student.id, student.programme_id, encode(digest(gen_random_uuid()::text || clock_timestamp()::text, 'sha256'), 'hex'), 'ACTIVE', now(), auth.uid())
+  values (student.id, student.programme_id, encode(extensions.digest((gen_random_uuid()::text || clock_timestamp()::text)::bytea, 'sha256'), 'hex'), 'ACTIVE', now(), auth.uid())
   on conflict (student_id, programme_id) do update set status = 'ACTIVE', issued_at = coalesce(certificates.issued_at, now()), archived_at = null, created_by = auth.uid()
   returning * into certificate;
   update public.certificates set qr_code_url = format('/api/verify-certificate/%s', certificate.certificate_hash) where id = certificate.id;
-  delete from public.certificate_units where certificate_id = certificate.id;
+  delete from public.certificate_units where public.certificate_units.certificate_id = certificate.id;
   insert into public.certificate_units (certificate_id, unit_id, unit_code, unit_name, credit_hours, grade, total_score, completed_at)
   select certificate.id, unit.id, unit.code, unit.name, unit.credit_hours, result.grade, result.total_score, result.released_at
   from public.units unit
@@ -227,7 +227,7 @@ begin
   values (student.id, student.programme_id, certificate.id, graduation_year, certificate.issued_at)
   on conflict (student_id) do update set certificate_id = excluded.certificate_id, programme_id = excluded.programme_id,
     cohort_label = excluded.cohort_label, graduated_at = excluded.graduated_at, archived_at = null;
-  update public.students set status = 'graduated' where id = student.id and status <> 'archived';
+  update public.students set status = 'graduated' where id = student.id and public.students.status <> 'archived';
   return query select certificate.id, certificate.certificate_hash, certificate.status;
 end;
 $$;

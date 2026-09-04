@@ -1,0 +1,17 @@
+{
+  "name": "Love & Truth Bible and Skills Training College",
+  "short_name": "Love & Truth College",
+  "description": "Student, academic and administration portal for Love & Truth Bible and Skills Training College.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0b3476",
+  "icons": [
+    {
+      "src": "src/assets/school-logo.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
