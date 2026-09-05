@@ -32,8 +32,8 @@ h1 em { color:var(--blue); font-style:normal; }
 .hero-stats div { border-left:2px solid var(--gold); padding-left:12px; }
 .hero-stats dt { font-size:14px; font-weight:700; }
 .hero-stats dd { margin:0; color:var(--muted); font-size:13px; }
-.hero-photo { position:relative; min-height:100%; overflow:hidden; background:center/cover url('https://res.cloudinary.com/ywbvk3ek/image/upload/IMG-20260901-WA0008_1'); }
-.photo-overlay { position:absolute; inset:0; background:linear-gradient(130deg,#062558ba,#0e4b9370); }
+.hero-photo { position:relative; min-height:100%; overflow:hidden; background:center/cover url('https://res.cloudinary.com/ywbvk3ek/image/upload/v1788620710/IMG-20260905-WA0003_1.jpg'); }
+.photo-overlay { position:absolute; inset:0; background:linear-gradient(130deg,#051e47c9 0%,#0b4a9275 58%,#0e6b7070 100%); }
 .hero-photo p { position:absolute; right:38px; bottom:33px; margin:0; color:#fff; font-size:10px; font-weight:700; letter-spacing:.16em; }
 .section { padding:104px clamp(25px,8vw,135px); }
 .about-section { display:grid; grid-template-columns:.85fr 1fr; gap:90px; }
@@ -67,6 +67,12 @@ h2 { margin:0; font-size:clamp(35px,4vw,54px); letter-spacing:-.04em; }
 .student-callout h2 { max-width:680px; font-size:45px; }
 .student-callout p:last-child { max-width:630px; margin:14px 0 0; color:#dce8ff; }
 .light-button { min-width:172px; color:var(--navy); background:#fff; box-shadow:none; }
+.student-life-section { background:linear-gradient(180deg,#fff 0%,#f6f9fd 100%); }
+.experience-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+.experience-grid article { min-height:232px; padding:28px; border-top:3px solid var(--gold); background:#fff; box-shadow:0 13px 31px #0a367210; }
+.experience-grid span { color:#b47b19; font-size:11px; font-weight:700; letter-spacing:.15em; }
+.experience-grid h3 { margin:24px 0 10px; font-size:25px; }
+.experience-grid p { margin:0; color:var(--muted); font-size:14px; }
 .contact-section { display:grid; grid-template-columns:.88fr 1.12fr; gap:70px; align-items:center; }
 .contact-copy > p:last-of-type { max-width:480px; color:var(--muted); }
 address { display:flex; flex-direction:column; gap:8px; margin-top:28px; font-style:normal; font-size:18px; font-weight:700; }
@@ -100,5 +106,5 @@ dialog form input { width:100%; margin-top:6px; border:1px solid var(--line); bo
 dialog form .primary-button { width:100%; margin-top:10px; }
 .login-copy,.login-message { color:var(--muted); font-size:14px; }
 .login-message { min-height:22px; color:#a13c42; text-align:left; }
-@media (max-width:900px) { .programme-grid { grid-template-columns:repeat(2,1fr); } .value-strip { grid-template-columns:1fr; } .value-strip article { min-height:auto; border-right:0; border-bottom:1px solid #ffffff24; } .value-strip article:last-child { border-bottom:0; } .admission-steps { grid-template-columns:1fr; } .faq-grid { grid-template-columns:1fr; } }
-@media (max-width:700px) { .site-header { padding:13px 20px; } nav { display:none; } .login-button { padding:10px 13px; font-size:13px; } .hero { grid-template-columns:1fr; } .hero-photo { min-height:320px; grid-row:1; } .hero-copy { padding:58px 25px 62px; } .hero-stats { gap:16px; margin-top:37px; } .about-section,.section-heading,.contact-section { grid-template-columns:1fr; gap:28px; } .section { padding:74px 25px; } .programme-grid { grid-template-columns:1fr; } .programme-grid article { min-height:0; } .student-callout { display:block; padding:60px 25px; } .student-callout h2 { font-size:39px; } .light-button { margin-top:27px; } .map-wrap iframe { height:300px; } footer { align-items:flex-start; flex-direction:column; padding:28px 25px; } .whatsapp-float { right:17px; bottom:17px; padding:13px; } .whatsapp-float span { display:none; } }
+@media (max-width:900px) { .programme-grid { grid-template-columns:repeat(2,1fr); } .value-strip { grid-template-columns:1fr; } .value-strip article { min-height:auto; border-right:0; border-bottom:1px solid #ffffff24; } .value-strip article:last-child { border-bottom:0; } .admission-steps { grid-template-columns:1fr; } .experience-grid,.faq-grid { grid-template-columns:repeat(2,1fr); } }
+@media (max-width:700px) { .site-header { padding:13px 20px; } nav { display:none; } .login-button { padding:10px 13px; font-size:13px; } .hero { grid-template-columns:1fr; } .hero-photo { min-height:320px; grid-row:1; } .hero-copy { padding:58px 25px 62px; } .hero-stats { gap:16px; margin-top:37px; } .about-section,.section-heading,.contact-section { grid-template-columns:1fr; gap:28px; } .section { padding:74px 25px; } .programme-grid,.experience-grid { grid-template-columns:1fr; } .programme-grid article { min-height:0; } .student-callout { display:block; padding:60px 25px; } .student-callout h2 { font-size:39px; } .light-button { margin-top:27px; } .map-wrap iframe { height:300px; } footer { align-items:flex-start; flex-direction:column; padding:28px 25px; } .whatsapp-float { right:17px; bottom:17px; padding:13px; } .whatsapp-float span { display:none; } }
