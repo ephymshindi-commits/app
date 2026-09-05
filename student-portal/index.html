@@ -17,7 +17,7 @@
   <meta property="og:title" content="Christian, Technical and Vocational Education in Bungoma" />
   <meta property="og:description" content="Biblical truth, practical skills and servant leadership at Love &amp; Truth Bible and Skills Training College." />
   <meta property="og:url" content="https://portal.ltbstc.com/" />
-  <meta property="og:image" content="https://res.cloudinary.com/ywbvk3ek/image/upload/IMG-20260901-WA0008_1" />
+  <meta property="og:image" content="https://res.cloudinary.com/ywbvk3ek/image/upload/v1788620710/IMG-20260905-WA0003_1.jpg" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -175,6 +175,39 @@
       <button id="student-login-submit" class="primary-button" type="submit">Sign in <span>→</span></button>
     </form>
   </dialog>
+
+  <dialog id="intake-welcome-modal" class="intake-dialog" aria-labelledby="intake-welcome-title">
+    <section>
+      <button class="close" type="button" data-close-intake aria-label="Close welcome message">×</button>
+      <p class="eyebrow">NEW STUDENT INTAKE</p>
+      <h2 id="intake-welcome-title">Welcome to Love &amp; Truth College.</h2>
+      <p>Admissions are currently open for learners ready to grow in faith, knowledge and practical skill.</p>
+      <div class="intake-highlights" aria-label="What new students can explore">
+        <span>Christian formation</span>
+        <span>Practical TVET training</span>
+        <span>Career-focused learning</span>
+      </div>
+      <div class="intake-actions">
+        <a class="primary-button" href="#programmes" data-close-intake>Explore programmes <span>→</span></a>
+        <a class="intake-contact-link" href="#contact" data-close-intake>Talk to admissions</a>
+      </div>
+    </section>
+  </dialog>
+  <script>
+    (() => {
+      const intakeWelcome = document.querySelector('#intake-welcome-modal');
+      const dismissIntakeWelcome = () => {
+        sessionStorage.setItem('ltbstc-intake-welcome-v1', 'true');
+        intakeWelcome.close();
+      };
+
+      document.querySelectorAll('[data-close-intake]').forEach((control) => control.addEventListener('click', dismissIntakeWelcome));
+
+      if (!sessionStorage.getItem('ltbstc-intake-welcome-v1')) {
+        window.setTimeout(() => intakeWelcome.showModal(), 300);
+      }
+    })();
+  </script>
   <script src="app.js" type="module"></script>
 </body>
 </html>
